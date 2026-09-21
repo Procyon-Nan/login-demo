@@ -4,8 +4,9 @@ const form = document.querySelector('.terminal');
 const input = document.querySelector('#token');
 const submit = form.querySelector('button');
 const status = form.querySelector('.terminal-status');
-const inputLine = form.querySelector('.input-line');
+const signetElement = document.querySelector('.signet');
 const scene = document.querySelector('.login-scene');
+const signature = document.querySelector('.signature');
 const signetCanvas = document.querySelector('.signet-art');
 const signetMotion = document.querySelector('.signet-motion');
 const signetIdleGlow = document.querySelector('.signet-idle-glow');
@@ -17,6 +18,8 @@ const themeToggle = document.querySelector('.theme-toggle');
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 let themeManuallySelected = false;
 let idleAnimations = [];
+let flowId = 0;
+debugReset.disabled = false;
 
 function syncSignetMotion() {
   for (const animation of idleAnimations) {
@@ -48,17 +51,19 @@ function stopIdleMotion(settle = false) {
 function startIdleMotion() {
   stopIdleMotion();
   if (reducedMotion.matches) return;
+  // 同帧启动、共用周期与分段缓动：最高点最亮，最低点最暗。
+  const timing = { duration: 6000, iterations: Infinity, easing: 'linear' };
   idleAnimations = [
     signetMotion.animate([
       { transform: 'translateY(0px)', easing: 'ease-in-out' },
-      { transform: 'translateY(-3px)', easing: 'ease-in-out' },
+      { transform: 'translateY(-7px)', easing: 'ease-in-out' },
       { transform: 'translateY(0px)' },
-    ], { duration: 8000, iterations: Infinity, easing: 'linear' }),
+    ], timing),
     signetIdleGlow.animate([
       { opacity: 0, easing: 'ease-in-out' },
       { opacity: 1, easing: 'ease-in-out' },
       { opacity: 0 },
-    ], { duration: 5000, iterations: Infinity }),
+    ], timing),
   ];
   syncSignetMotion();
 }
@@ -122,14 +127,38 @@ function enableInput() {
   }
 }
 
-// 刻印资源和传播场准备好后才允许提交，避免空白刻印直接进入业务页。
+// 每段等待实际动画结束；流程编号阻止重置前的异步任务继续点亮或跳转。
+async function runPhase(phase, element, run, subtree = false) {
+  if (run !== flowId) return false;
+  scene.dataset.phase = phase;
+  const animations = element.getAnimations({ subtree });
+  await Promise.all(animations.map(animation => animation.finished.catch(() => {})));
+  return run === flowId;
+}
+
+async function enterLogin() {
+  const run = ++flowId;
+  input.disabled = true;
+  submit.disabled = true;
+  debugStart.disabled = true;
+  startIdleMotion();
+  if (!await runPhase('entering', signetElement, run)) return;
+  // 等字标和两侧横线实际完成，再让刻印离开中央。
+  await Promise.all(signature.getAnimations({ subtree: true })
+    .map(animation => animation.finished.catch(() => {})));
+  if (!await runPhase('shifting', signetElement, run)) return;
+  if (!await runPhase('opening', form, run, true)) return;
+  scene.dataset.phase = 'ready';
+  enableInput();
+}
+
+// 资源准备好后先在中央显现刻印，左移完成后才展开输入框。
 createSignet(signetCanvas, signetIdleGlow).then(renderer => {
   signet = renderer;
-  startIdleMotion();
-  if (getComputedStyle(inputLine).opacity === '1' || reducedMotion.matches) enableInput();
-  else inputLine.addEventListener('animationend', enableInput, { once: true });
+  return enterLogin();
 }).catch(error => {
   console.error('刻印资源初始化失败', error);
+  scene.dataset.phase = 'ready';
   status.textContent = '页面资源加载失败，请刷新重试';
 });
 
@@ -146,22 +175,31 @@ form.addEventListener('submit', async (event) => {
 });
 
 async function playSignet(preview) {
-  // 调试与登录共用点亮过程；调试完成后保留完整刻印供查看。
+  if (debugStart.disabled) return;
+  const run = ++flowId;
+  // 调试与登录共用收起、归中、点亮流程；预览完成后留在中央。
   stopIdleMotion(true);
   input.value = '';
+  input.blur();
   input.disabled = true;
   submit.disabled = true;
   debugStart.disabled = true;
   form.setAttribute('aria-busy', 'true');
   status.textContent = '';
-  scene.classList.remove('is-lit');
   scene.classList.add('is-awakening');
-  if (!await signet.play(reducedMotion)) return;
+  if (scene.dataset.phase !== 'lit') {
+    if (!await runPhase('closing', form, run, true)) return;
+    if (!await runPhase('centering', signetElement, run)) return;
+  }
+  scene.classList.remove('is-lit');
+  scene.dataset.phase = 'lighting';
+  if (!await signet.play(reducedMotion) || run !== flowId) return;
   scene.classList.add('is-lit');
+  scene.dataset.phase = 'lit';
   if (preview) {
     scene.classList.remove('is-awakening');
     form.removeAttribute('aria-busy');
-    enableInput();
+    debugStart.disabled = false;
     return;
   }
   // 前 360ms 保持完整点亮，随后整体淡出，最后才进入业务页。
@@ -170,27 +208,28 @@ async function playSignet(preview) {
     { opacity: 1, offset: .5 },
     { opacity: 0, offset: 1 },
   ], { duration: reducedMotion.matches ? 0 : 720, fill: 'forwards' }).finished.then(() => true, () => false);
-  if (completed) window.location.assign('./dashboard.html');
+  if (completed && run === flowId) window.location.assign('./dashboard.html');
 }
 
 function resetLogin() {
-  scene.getAnimations().forEach(animation => animation.cancel());
+  flowId += 1;
+  stopIdleMotion();
+  scene.getAnimations({ subtree: true }).forEach(animation => animation.cancel());
   signet?.reset();
   scene.classList.remove('is-awakening', 'is-lit');
+  scene.dataset.phase = 'loading';
   form.removeAttribute('aria-busy');
   status.textContent = '';
   input.value = '';
-  if (signet) {
-    startIdleMotion();
-    enableInput();
-  }
+  // 后退恢复时先落到隐藏、居中的初始布局，再重新入场。
+  signetElement.style.transition = 'none';
+  getComputedStyle(signetElement).translate;
+  signetElement.style.transition = '';
+  if (signet) enterLogin();
 }
 
 debugStart.addEventListener('click', () => playSignet(true));
-debugReset.addEventListener('click', () => {
-  resetLogin();
-  window.location.reload();
-});
+debugReset.addEventListener('click', () => window.location.reload());
 
 input.addEventListener('input', () => {
   status.textContent = '';

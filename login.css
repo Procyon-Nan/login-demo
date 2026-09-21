@@ -124,29 +124,42 @@ body:has(#token:not(:placeholder-shown)) .ambient, body:has(.is-awakening) .ambi
 .ambient { transition: opacity 1.2s ease; }
 main { position: relative; min-height: 100svh; display: grid; place-items: center; padding: 120px 28px; }
 .login-scene {
-  width: min(100%, 920px);
+  --scene-gap: clamp(24px, 7vw, 100px);
+  container-type: inline-size;
+  width: min(100%, 950px);
   display: grid;
-  grid-template-columns: minmax(0, 340fr) minmax(0, 480fr);
+  grid-template-columns: minmax(0, 370fr) minmax(0, 480fr);
   align-items: center;
-  gap: clamp(24px, 7vw, 100px);
+  gap: var(--scene-gap);
 }
 .signet {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
   pointer-events: none;
-  animation: reveal 900ms ease both;
+  translate: calc((100cqw - 100%) / 2) 0;
+  opacity: 1;
+  transition: translate 720ms cubic-bezier(.45, 0, .2, 1), opacity 500ms ease;
 }
 .signet-motion { position: absolute; inset: 0; }
 .signet-art, .signet-idle-glow { position: absolute; inset: -17.5%; width: 135%; height: 135%; }
 .signet-idle-glow { opacity: 0; filter: blur(1.5px) drop-shadow(0 0 4px var(--signet-idle)); }
-.is-awakening .terminal { opacity: .55; }
+[data-phase="loading"] .signet { opacity: 0; }
+.login-scene:is([data-phase="shifting"], [data-phase="opening"], [data-phase="ready"], [data-phase="closing"]) .signet { translate: 0 0; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="closing"]) .terminal { visibility: visible; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"]) .origin { animation: origin 400ms ease both; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"]) .frame { animation: unfold-diagonal 450ms cubic-bezier(.22, .7, .25, 1) 120ms both; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"]) :is(.frame-arc, .frame-tip) { animation: frame-trace 500ms cubic-bezier(.25, .6, .3, 1) 260ms both; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"]) .input-line { animation: reveal 240ms ease 660ms both; }
+[data-phase="closing"] .input-line { animation: input-hide 100ms ease both; }
+[data-phase="closing"] :is(.frame-arc, .frame-tip) { animation: frame-trace 230ms ease-in reverse both; }
+[data-phase="closing"] .frame { animation: fold-diagonal 310ms cubic-bezier(.45, 0, .3, 1) 50ms both; }
 .terminal {
   position: relative;
   width: min(100%, 480px);
   height: 80px;
   margin: 0;
-  transition: opacity 500ms ease;
+  visibility: hidden;
 }
 .origin {
   position: absolute;
@@ -157,7 +170,7 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
   background: var(--control);
   transform: translate(-50%, -50%) rotate(45deg);
   box-shadow: 0 0 12px var(--core-glow);
-  animation: origin 650ms ease both;
+  opacity: 0;
 }
 .frame {
   position: absolute;
@@ -168,7 +181,6 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
   pointer-events: none;
   fill: none;
   stroke-width: 1;
-  animation: unfold-diagonal 750ms cubic-bezier(.22, .7, .25, 1) 300ms both;
   transition: filter 200ms ease;
 }
 .frame-upper { --from-x: 47.5%; --from-y: 37.5%; }
@@ -179,7 +191,6 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
   stroke-dasharray: 1 2;
   stroke-dashoffset: 1;
   stroke-linecap: butt;
-  animation: frame-trace 850ms cubic-bezier(.25, .6, .3, 1) 550ms both;
 }
 .frame-arc { stroke: url(#input-thread); }
 .frame-tip { stroke: var(--line); opacity: .5; }
@@ -195,7 +206,6 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
   padding: 0 28px;
   gap: 16px;
   opacity: 0;
-  animation: reveal 420ms ease 1.15s forwards;
 }
 .prompt { color: var(--control); font-size: 17px; user-select: none; }
 input {
@@ -300,6 +310,15 @@ noscript { color: var(--muted); font-size: 12px; }
   8% { opacity: 1; }
   to { transform: translate(0, 0); opacity: 1; }
 }
+@keyframes fold-diagonal {
+  from { transform: translate(0, 0); opacity: 1; }
+  85% { opacity: 1; }
+  to { transform: translate(var(--from-x), var(--from-y)); opacity: 0; }
+}
+@keyframes input-hide {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
 @keyframes frame-trace {
   from { stroke-dashoffset: 1; }
   to { stroke-dashoffset: 0; }
@@ -338,7 +357,7 @@ noscript { color: var(--muted); font-size: 12px; }
 }
 @media (max-width: 600px) {
   main { padding-inline: 16px; }
-  .login-scene { gap: 16px; }
+  .login-scene { --scene-gap: 16px; }
   .theme-toggle { top: 16px; right: 16px; }
   .debug-controls { top: 16px; left: 16px; gap: 4px; }
   .terminal { height: 72px; }

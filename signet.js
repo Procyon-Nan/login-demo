@@ -4,7 +4,7 @@ const RENDER_SIZE = 640;
 // 对应 CSS 的 17.5% 外扩，让原图自带的泛光完整落在画布内。
 const ART_PADDING = 112;
 const ART_SIZE = 640 + ART_PADDING * 2;
-const LIGHT_DURATION = 3000;
+const LIGHT_DURATION = 2100;
 const smoothstep = (start, end, value) => {
   const t = Math.max(0, Math.min(1, (value - start) / (end - start)));
   return t * t * (3 - 2 * t);
