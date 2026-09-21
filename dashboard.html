@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>工作台 · 云序</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="./dashboard.html" aria-label="云序工作台首页"><span class="brand-mark">云</span>云序<span class="brand-en">WORKSPACE</span></a>
+      <div class="workspace"><span class="workspace-icon">星</span><div><strong>星辰科技</strong><small>企业工作空间</small></div><span class="workspace-dot" aria-label="正常运行"></span></div>
+      <div class="nav-label">工作空间</div>
+      <nav aria-label="主导航">
+        <a class="nav-item active" href="#overview" aria-current="page"><span aria-hidden="true">▦</span>工作台</a>
+        <a class="nav-item" href="#orders"><span aria-hidden="true">▤</span>业务订单</a>
+        <a class="nav-item" href="#tasks"><span aria-hidden="true">☑</span>待办事项<span class="nav-count">3</span></a>
+      </nav>
+      <div class="sidebar-note"><span class="note-icon">✧</span><strong>让工作，有条不紊。</strong><p>每一件小事，都在推动业务向前。</p></div>
+      <div class="sidebar-footer"><span class="status-dot"></span>静态演示工作空间</div>
+    </aside>
+
+    <div class="page">
+      <header class="topbar"><div class="breadcrumb">工作空间 <span>/</span> <strong>工作台</strong></div><div class="profile"><span class="demo-label">演示模式</span><span class="avatar">林</span><div><strong>林晓</strong><small>业务管理员</small></div><a class="reset-login" href="./index.html" title="重置演示，重新播放登录动画"><span aria-hidden="true">↻</span> 重新登录</a></div></header>
+      <main id="overview">
+        <div class="page-heading"><div><div class="eyebrow">YOUR DAILY OVERVIEW</div><h1>欢迎回来，林晓 <span class="greeting">✦</span></h1><p>从这里开始，掌握业务动态，安排今天的工作。</p></div><span class="date-label">2026 年 9 月 21 日 · 星期一</span></div>
+
+        <section class="welcome-banner" aria-label="业务简报"><div><span class="banner-tag"><span class="status-dot"></span>一切井然有序</span><h2>新的开始，新的进展。</h2><p>你有 3 项待办需要跟进。先处理重要的事，让今天更从容。</p><a class="primary-link" href="#tasks">查看我的待办 <span aria-hidden="true">↗</span></a></div><div class="banner-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="art-card"><span>本月业务目标</span><strong>78<small>%</small></strong><div class="progress-track"><i></i></div><span>稳步向前，持续生长 ↗</span></div><span class="art-spark">✦</span></div></section>
+
+        <section class="metrics" aria-label="业务概览">
+          <article class="metric"><div class="metric-label">本月销售额 <span class="metric-icon">¥</span></div><strong>¥128,560<span>.00</span></strong><div class="metric-foot"><span class="trend">↗ 12.8%</span>较上月</div></article>
+          <article class="metric"><div class="metric-label">本月订单 <span class="metric-icon">▤</span></div><strong>86<span> 笔</span></strong><div class="metric-foot"><span class="trend">↗ 8.2%</span>较上月</div></article>
+          <article class="metric"><div class="metric-label">合作客户 <span class="metric-icon">♧</span></div><strong>1,248<span> 位</span></strong><div class="metric-foot"><span class="trend">+ 24</span>本月新增</div></article>
+          <article class="metric"><div class="metric-label">待处理事项 <span class="metric-icon amber">◷</span></div><strong>3<span> 项</span></strong><div class="metric-foot"><span class="attention">1 项优先处理</span>及时跟进</div></article>
+        </section>
+
+        <div class="content-grid">
+          <section class="panel orders" id="orders"><div class="panel-heading"><div><h2>最近订单</h2><p>业务进展，尽在掌握</p></div><span class="subtle-label">最近 5 笔</span></div><div class="table-scroll"><table><caption class="sr-only">最近五笔业务订单，全部为示例数据</caption><thead><tr><th scope="col">订单 / 客户</th><th scope="col">金额</th><th scope="col">状态</th><th scope="col">日期</th></tr></thead><tbody>
+            <tr><td><strong>企业协作平台年度订阅</strong><span>青禾设计 · #2026092101</span></td><td class="amount">¥12,800.00</td><td><span class="badge green">已完成</span></td><td class="table-date">09-21</td></tr>
+            <tr><td><strong>品牌官网建设服务</strong><span>远山文化 · #2026092102</span></td><td class="amount">¥28,500.00</td><td><span class="badge blue">进行中</span></td><td class="table-date">09-21</td></tr>
+            <tr><td><strong>数据分析专业版</strong><span>拾光科技 · #2026092003</span></td><td class="amount">¥6,800.00</td><td><span class="badge orange">待付款</span></td><td class="table-date">09-20</td></tr>
+            <tr><td><strong>客户管理系统升级</strong><span>木里生活 · #2026092004</span></td><td class="amount">¥18,000.00</td><td><span class="badge green">已完成</span></td><td class="table-date">09-20</td></tr>
+            <tr><td><strong>团队空间扩容服务</strong><span>北辰咨询 · #2026091905</span></td><td class="amount">¥3,600.00</td><td><span class="badge green">已完成</span></td><td class="table-date">09-19</td></tr>
+          </tbody></table></div><div class="table-footer"><span class="status-dot"></span>以上为示例订单，仅用于页面展示</div></section>
+
+          <section class="panel tasks" id="tasks"><div class="panel-heading"><div><h2>我的待办 <span class="task-count">3</span></h2><p>专注当下，一件一件完成</p></div><span class="subtle-label">今日</span></div><ul class="task-list"><li><span class="task-marker urgent"></span><div><span class="task-priority">优先处理</span><h3>确认远山文化项目需求</h3><p>与客户对齐官网设计方案</p><small>今天 11:00</small></div></li><li><span class="task-marker"></span><div><h3>跟进拾光科技订单付款</h3><p>确认付款进度并更新订单</p><small>今天 14:30</small></div></li><li><span class="task-marker"></span><div><h3>整理本周业务进展</h3><p>准备团队周会汇报资料</p><small>今天 17:00</small></div></li></ul><div class="task-note">把计划变成行动，让进展清晰可见。</div></section>
+        </div>
+        <footer class="page-footer"><span>© 2026 云序 · 企业业务工作台</span><span>静态页面示例 · 所有数据均为演示数据</span></footer>
+      </main>
+    </div>
+  </body>
+</html>

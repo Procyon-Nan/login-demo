@@ -1,0 +1,212 @@
+[
+  {
+    "file": "01_角色与场景/01_真我人之律者_官方专题角色主视觉.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "role_1_1_poster",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/12/691a37a5b8318b21fd4503877174ec9c_1180292827801711669.png",
+    "bytes": 2181902,
+    "dimensions": [
+      2400,
+      1080
+    ],
+    "format": "PNG",
+    "sha256": "8578a5ad9fff5cc68bb6d9ee4257411c16f7f3d49a7dfaeadd92da316256e0f3",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "01_角色与场景/02_真我人之律者_官方展示底图.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "role_1_1_doudi",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/12/4c119f9db73a2a360fd78c863a23406b_841219636890440935.png",
+    "bytes": 2551727,
+    "dimensions": [
+      3336,
+      1500
+    ],
+    "format": "PNG",
+    "sha256": "1f352cc5a434c725514f5cb9809da1751165dd02fc94a6a63a69d21766b8bdcf",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "01_角色与场景/03_真我人之律者_角色演示封面.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "role_1_1_videoPoster",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/12/a9a9cd0f42099cceff4a4b5ba8067c23_5827041531572001579.png",
+    "bytes": 792651,
+    "dimensions": [
+      1920,
+      1080
+    ],
+    "format": "PNG",
+    "sha256": "47899af4d2822ea769ad67a5a0c23a7cd81d3fe05b0c1ec8cd34af05045fdcb3",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "01_角色与场景/04_真我人之律者_战斗演示静帧.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "role_1_1_gifPoster",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/12/04449d7a73d1842870da8fe1a690b13d_262985221621754930.png",
+    "bytes": 2658909,
+    "dimensions": [
+      325,
+      180
+    ],
+    "format": "PNG",
+    "sha256": "ef9053677035aaa7b5bc790addc845d8cc71249ba9b309f4620dd9a2fd4122be",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "01_角色与场景/05_光辉矢愿_官方专题背景.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "global_bg",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/05/32b67f299b8b14401760f02942ecb857_4859215304009934312.png",
+    "bytes": 4063600,
+    "dimensions": [
+      3336,
+      1500
+    ],
+    "format": "PNG",
+    "sha256": "82a770f88fb380c7786c6f1c51ce7d63515a3560adce11f2dcacddc26ad8e249",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "02_武器与圣痕/01_真我之钥_官方武器图.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "weapon_1_2_mainImgnor",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/08/b3ed0702ff6098c7ae19dbc926c44c5f_3963778617717511067.png",
+    "bytes": 1080569,
+    "dimensions": [
+      3336,
+      1500
+    ],
+    "format": "PNG",
+    "sha256": "170c5ed951d961b2b87dde38a3bae0b76d8bd7938db198f3a04e836b5abb4d7a",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "02_武器与圣痕/02_真我之境无瑕回归_官方武器图.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "weapon_1_2_mainImgsp",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/08/417d1fa2c385422fb008e4f121494084_361555345460027947.png",
+    "bytes": 939899,
+    "dimensions": [
+      3336,
+      1500
+    ],
+    "format": "PNG",
+    "sha256": "5d57c63fd191db359d037fef33bd281e267c594d81abbe9826624db0e4baf876",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "02_武器与圣痕/03_爱莉希雅无瑕之人_上.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "segment_1_3_mainImg1",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/10/d7a6df5f0e49840ea6e416adecc20a83_2995441764586476823.png",
+    "bytes": 2240959,
+    "dimensions": [
+      3336,
+      1500
+    ],
+    "format": "PNG",
+    "sha256": "3cccf1a9e44456cb0eec771c2f40159dc38f6c837452f07131be1ffbef48c212",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "02_武器与圣痕/04_爱莉希雅无瑕之人_中.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "segment_1_3_mainImg2",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/16/33bab6a804fe5491a5cc4630a1273798_8111692832502873914.png",
+    "bytes": 2583561,
+    "dimensions": [
+      3340,
+      1504
+    ],
+    "format": "PNG",
+    "sha256": "40c1e35818da5981066f84a34d8320d17739a5a577483b848d665bdf07d2ffe7",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "02_武器与圣痕/05_爱莉希雅无瑕之人_下.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "segment_1_3_mainImg3",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/10/e548bd051a43e775ac944f6d55a743b0_7380456241120981422.png",
+    "bytes": 3206248,
+    "dimensions": [
+      3336,
+      1500
+    ],
+    "format": "PNG",
+    "sha256": "c7580216b8f35f39808f6bc9f123acf1b2c87c05d5bdf8d9d03eab77e35b20fc",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "03_界面细节/01_官方导航_默认状态.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "global_tabBg",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/10/7d952e95430d6254966c9407410e120b_573243131702289822.png",
+    "bytes": 1977,
+    "dimensions": [
+      540,
+      120
+    ],
+    "format": "PNG",
+    "sha256": "c54adc0dd2adbb4c8769deda6df38017415a1f0a102e9e074f231f469d923609",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "03_界面细节/02_官方导航_选中状态.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "global_tabBgActive",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/10/4a0a59650ae439b26fa6b11e50b576e8_5898065101523051151.png",
+    "bytes": 6951,
+    "dimensions": [
+      540,
+      120
+    ],
+    "format": "PNG",
+    "sha256": "fcb43bfdae2cc65b42523a8b0887cae761ec39e1e938c41fe867c2089cae9f6b",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "03_界面细节/03_官方角色介绍_细线底框.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "role_1_1_descBg",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/08/24c796b179879e9a8dab40535ae92847_8212676748827054639.png",
+    "bytes": 22813,
+    "dimensions": [
+      720,
+      80
+    ],
+    "format": "PNG",
+    "sha256": "e0c7c1d24ad4a005031a1e1b944b53b922d9c882002211393ab080d4c8b872bd",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "03_界面细节/04_真我人之律者_官方标题.png",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "role_1_1_title",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/10/83b19162f8d3bfd6e31cbd37f817b017_1332459715649045932.png",
+    "bytes": 83507,
+    "dimensions": [
+      940,
+      320
+    ],
+    "format": "PNG",
+    "sha256": "fc7657c64b303b49ac42f09ca3df3b89f888fb17b8aba322bd2435b46a3ea846",
+    "download_date": "2026-09-21"
+  },
+  {
+    "file": "04_动态参考/01_真我人之律者_官方战斗演示.gif",
+    "source_page": "https://webstatic.mihoyo.com/bh3/event/puzzle/e20220813preview_557/",
+    "source_field": "role_1_1_gif",
+    "url": "https://uploadstatic.mihoyo.com/puzzle/upload/puzzle/2022/08/12/be46ccc45911ddd4d685dd478486b1f0_819220563393763112.gif",
+    "bytes": 3390201,
+    "dimensions": [
+      406,
+      225
+    ],
+    "format": "GIF",
+    "sha256": "8aafd77f788188573a5bfcdbbc9f26e3c12774085a9a03811d9e6636a3064bab",
+    "download_date": "2026-09-21"
+  }
+]

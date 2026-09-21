@@ -1,0 +1,56 @@
+[
+  {
+    "family": "cormorantgaramond",
+    "file": "fonts/cormorantgaramond/CormorantGaramond-Italic.ttf",
+    "source_page": "https://github.com/google/fonts/tree/main/ofl/cormorantgaramond",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/cormorantgaramond/CormorantGaramond-Italic%5Bwght%5D.ttf",
+    "bytes": 715644,
+    "sha256": "0f48ea6abb2084537854f7174c470991a463b13036309e3b50a81511611c530d",
+    "download_date": "2026-09-21"
+  },
+  {
+    "family": "marcellus",
+    "file": "fonts/marcellus/Marcellus-Regular.ttf",
+    "source_page": "https://github.com/google/fonts/tree/main/ofl/marcellus",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/marcellus/Marcellus-Regular.ttf",
+    "bytes": 46004,
+    "sha256": "1cf0cd10b17d35e852729962cc1ffaffed94514895972458345e2df34abb2f81",
+    "download_date": "2026-09-21"
+  },
+  {
+    "family": "cinzel",
+    "file": "fonts/cinzel/Cinzel.ttf",
+    "source_page": "https://github.com/google/fonts/tree/main/ofl/cinzel",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/cinzel/Cinzel%5Bwght%5D.ttf",
+    "bytes": 125468,
+    "sha256": "f4d83d34d1f6c741193e4acf4b3dff9531e5a67b6aa65228d00a7db72a4e0f34",
+    "download_date": "2026-09-21"
+  },
+  {
+    "family": "italiana",
+    "file": "fonts/italiana/Italiana-Regular.ttf",
+    "source_page": "https://github.com/google/fonts/tree/main/ofl/italiana",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/italiana/Italiana-Regular.ttf",
+    "bytes": 31828,
+    "sha256": "0ad271d9cd42a57cd5c5fa483ae2406a8138b95acb2a43eb73a8d37b7291fee9",
+    "download_date": "2026-09-21"
+  },
+  {
+    "family": "allura",
+    "file": "fonts/allura/Allura-Regular.ttf",
+    "source_page": "https://github.com/google/fonts/tree/main/ofl/allura",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/allura/Allura-Regular.ttf",
+    "bytes": 246632,
+    "sha256": "9c142b2e515832c0dfc4ff8b8ea18f40314943bf937b72e2b23c4661bac14cc6",
+    "download_date": "2026-09-21"
+  },
+  {
+    "family": "tangerine",
+    "file": "fonts/tangerine/Tangerine-Bold.ttf",
+    "source_page": "https://github.com/google/fonts/tree/main/ofl/tangerine",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/tangerine/Tangerine-Bold.ttf",
+    "bytes": 65464,
+    "sha256": "a35368c814c71c15928ffc60cbac32bc81461f03b895a4a607df9c64b3d1548b",
+    "download_date": "2026-09-21"
+  }
+]

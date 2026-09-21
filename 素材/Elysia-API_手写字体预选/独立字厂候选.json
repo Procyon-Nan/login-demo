@@ -1,0 +1,83 @@
+[
+  {
+    "id": "X01",
+    "name": "Nickainley",
+    "source": "Seniors Studio / Fontfabric",
+    "source_page": "https://www.fontfabric.com/fonts/nickainley/",
+    "note": "均匀线条的复古连笔；官方可试字，免费文件通过官方领取。",
+    "local_font": false,
+    "checked_date": "2026-09-21"
+  },
+  {
+    "id": "X02",
+    "name": "Mission Script",
+    "source": "James T. Edmondson / Lost Type",
+    "source_page": "https://www.losttype.com/font/?name=mission_script",
+    "note": "紧凑亲切的笔刷招牌字；官方区分个人与商业许可。",
+    "local_font": false,
+    "checked_date": "2026-09-21"
+  },
+  {
+    "id": "X03",
+    "name": "Viktor Script",
+    "source": "Erik Marinovich / OH no Type Company",
+    "source_page": "https://ohnotype.co/fonts/viktor-script",
+    "note": "笔刷质感鲜明，较活泼；选 Regular，Caps 款不属于本次手写候选。",
+    "local_font": false,
+    "checked_date": "2026-09-21"
+  },
+  {
+    "id": "X04",
+    "name": "Burgues Script",
+    "source": "Alejandro Paul / Sudtipos",
+    "source_page": "https://www.sudtipos.com/font/burgues-script",
+    "note": "正式华丽书法；适合比较装饰感上限。",
+    "local_font": false,
+    "checked_date": "2026-09-21"
+  },
+  {
+    "id": "X05",
+    "name": "Samantha Script",
+    "source": "Laura Worthington",
+    "source_page": "https://lauraworthingtondesign.com/font/samantha/",
+    "note": "柔美的艺术连笔；仅考虑 Script，不选配套直立印刷体。",
+    "local_font": false,
+    "checked_date": "2026-09-21"
+  },
+  {
+    "id": "X06",
+    "name": "Flirt Script",
+    "source": "Neil Summerour / Positype",
+    "source_page": "https://positype.com/flirt-script",
+    "note": "自然细线连笔，强调字母之间的书写衔接。",
+    "local_font": false,
+    "checked_date": "2026-09-21"
+  },
+  {
+    "id": "X07",
+    "name": "Ivar Script",
+    "source": "Göran Söderström / Letters from Sweden",
+    "source_page": "https://lettersfromsweden.se/font/ivar-script/",
+    "note": "连笔书法与斜体结构结合；保留为克制风格候选。",
+    "local_font": false,
+    "checked_date": "2026-09-21"
+  },
+  {
+    "id": "X08",
+    "name": "LiebeHeide",
+    "source": "Ulrike Rausch / LiebeFonts",
+    "source_page": "https://liebefonts.com/fonts/liebeheide",
+    "note": "真实圆珠笔肌理；彩色字体，明暗换色与动画实现需单独评估。",
+    "local_font": false,
+    "checked_date": "2026-09-21"
+  },
+  {
+    "id": "X09",
+    "name": "Elevate",
+    "source": "Måns Grebäck",
+    "source_page": "https://www.mansgreback.com/fonts-2/elevate",
+    "note": "较厚实的手写字标方向。",
+    "local_font": false,
+    "checked_date": "2026-09-21"
+  }
+]
