@@ -17,26 +17,42 @@ async function loadImage(url) {
   return image;
 }
 
-function sampleImage(image, size, solid = false) {
+function sampleImage(image, size) {
   const surface = document.createElement('canvas');
   surface.width = surface.height = size;
   const context = surface.getContext('2d', { willReadFrequently: true });
   const scale = size / ART_SIZE;
-  if (solid) {
-    // 用实心区域定位，但绘制整张原图，保留外围泛光的 RGB 和透明度。
-    const sx = 615 / 2744;
-    const sy = 602 / 2684;
-    context.drawImage(image, (ART_PADDING + 16 - 497 * sx) * scale,
-      (ART_PADDING + 23 - 537 * sy) * scale, image.width * sx * scale, image.height * sy * scale);
-  } else {
-    context.drawImage(image, ART_PADDING * scale, ART_PADDING * scale, 640 * scale, 640 * scale);
-  }
+  // 用实心区域定位，但绘制整张原图，保留外围泛光的 RGB 和透明度。
+  const sx = 615 / 2744;
+  const sy = 602 / 2684;
+  context.drawImage(image, (ART_PADDING + 16 - 497 * sx) * scale,
+    (ART_PADDING + 23 - 537 * sy) * scale, image.width * sx * scale, image.height * sy * scale);
   return context.getImageData(0, 0, size, size).data;
 }
 
 function solidAlpha(pixels, offset) {
   // 仅识别用于传播的实心笔画；洋红色半透明像素是原图泛光，渲染时保留。
   return Math.min(1, pixels[offset + 1] / 240) * pixels[offset + 3] / 255;
+}
+
+function buildIdleContour(pixels, size) {
+  const core = Float32Array.from({ length: size * size }, (_, i) => solidAlpha(pixels, i * 4));
+  const contour = new Float32Array(core.length);
+  // 在动画自身的实心覆盖率上向内取 2px 边缘，保留抗锯齿；不引入另一张线稿的坐标。
+  for (let y = 2; y < size - 2; y++) {
+    for (let x = 2; x < size - 2; x++) {
+      const i = y * size + x;
+      if (!core[i]) continue;
+      let interior = core[i];
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          if (dx * dx + dy * dy <= 4) interior = Math.min(interior, core[i + dy * size + dx]);
+        }
+      }
+      contour[i] = core[i] - interior;
+    }
+  }
+  return contour;
 }
 
 function buildArrivalField(pixels, size) {
@@ -182,16 +198,16 @@ function createGlowField(pixels, arrival) {
   };
 }
 
-export async function createSignet(canvas) {
-  const [solid, outline] = await Promise.all([
-    loadImage('./assets/images/elysia-signet-solid.png'),
-    loadImage('./assets/images/elysia-signet.png'),
-  ]);
-  const fieldPixels = sampleImage(solid, FIELD_SIZE, true);
+export async function createSignet(canvas, idleGlowCanvas) {
+  const solid = await loadImage('./assets/images/elysia-signet-solid.png');
+  const fieldPixels = sampleImage(solid, FIELD_SIZE);
   const field = buildArrivalField(fieldPixels, FIELD_SIZE);
   const glowAt = createGlowField(fieldPixels, field);
-  const fillPixels = sampleImage(solid, RENDER_SIZE, true);
-  const linePixels = sampleImage(outline, RENDER_SIZE);
+  const fillPixels = sampleImage(solid, RENDER_SIZE);
+  const contour = buildIdleContour(fillPixels, RENDER_SIZE);
+  idleGlowCanvas.width = idleGlowCanvas.height = RENDER_SIZE;
+  const idleGlowContext = idleGlowCanvas.getContext('2d');
+  const idleGlowFrame = idleGlowContext.createImageData(RENDER_SIZE, RENDER_SIZE);
   canvas.width = canvas.height = RENDER_SIZE;
   const context = canvas.getContext('2d');
   const frame = context.createImageData(RENDER_SIZE, RENDER_SIZE);
@@ -199,8 +215,8 @@ export async function createSignet(canvas) {
   for (let i = 0; i < RENDER_SIZE * RENDER_SIZE; i++) {
     const core = solidAlpha(fillPixels, i * 4);
     const sourceAlpha = fillPixels[i * 4 + 3] / 255;
-    const line = linePixels[i * 4 + 3] / 255;
-    if (sourceAlpha < .002 && line < .002) continue;
+    const line = contour[i];
+    if (sourceAlpha < .002) continue;
     const fieldX = (i % RENDER_SIZE) / (RENDER_SIZE - 1) * (FIELD_SIZE - 1);
     const fieldY = Math.floor(i / RENDER_SIZE) / (RENDER_SIZE - 1) * (FIELD_SIZE - 1);
     active.push({
@@ -247,6 +263,14 @@ export async function createSignet(canvas) {
     const color = name => style.getPropertyValue(name).trim().slice(1).match(/../g).map(value => parseInt(value, 16));
     idleColor = color('--signet-idle');
     flowColor = color('--signet-flow');
+    // 独立光晕只取同一轮廓，初始化与切换主题时更新；呼吸不改变主体线条。
+    for (let i = 0; i < contour.length; i++) {
+      idleGlowFrame.data[i * 4] = idleColor[0];
+      idleGlowFrame.data[i * 4 + 1] = idleColor[1];
+      idleGlowFrame.data[i * 4 + 2] = idleColor[2];
+      idleGlowFrame.data[i * 4 + 3] = contour[i] * 255;
+    }
+    idleGlowContext.putImageData(idleGlowFrame, 0, 0);
     draw(progress);
   }
   function reset() {

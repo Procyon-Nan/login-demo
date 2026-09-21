@@ -16,7 +16,7 @@
   --ice-haze: #b9e8f516;
   --edge-glow: #e58abd24;
   --core-glow: #f7a8d84d;
-  --signet-idle: #a28ab9;
+  --signet-idle: #65408b;
   --signet-flow: #da83b8;
   background: var(--background);
   color: var(--text);
@@ -39,7 +39,7 @@
   --ice-haze: #8fd9ed08;
   --edge-glow: #f7a8d833;
   --core-glow: #f7a8d880;
-  --signet-idle: #78658f;
+  --signet-idle: #e58abd;
   --signet-flow: #e58abd;
 }
 
@@ -95,7 +95,7 @@ body {
   position: absolute;
   inset: 0;
   /* 让输入框及状态文案周围保持安静，不让星点穿过文字。 */
-  mask-image: radial-gradient(ellipse 340px 240px at 50% calc(50% - 18px), transparent 75%, #000 125%);
+  mask-image: radial-gradient(ellipse 540px 280px at 50% 50%, transparent 75%, #000 125%);
 }
 .star {
   position: absolute;
@@ -122,16 +122,24 @@ body {
 body[data-background-paused] .ambient * { animation-play-state: paused; }
 body:has(#token:not(:placeholder-shown)) .ambient, body:has(.is-awakening) .ambient { opacity: .55; }
 .ambient { transition: opacity 1.2s ease; }
-main { position: relative; min-height: 100svh; display: grid; place-items: center; padding: 90px 28px 140px; }
-.login-scene { width: min(100%, 480px); display: grid; justify-items: center; gap: 46px; }
+main { position: relative; min-height: 100svh; display: grid; place-items: center; padding: 120px 28px; }
+.login-scene {
+  width: min(100%, 920px);
+  display: grid;
+  grid-template-columns: minmax(0, 340fr) minmax(0, 480fr);
+  align-items: center;
+  gap: clamp(24px, 7vw, 100px);
+}
 .signet {
   position: relative;
-  width: clamp(170px, 25svh, 220px);
+  width: 100%;
   aspect-ratio: 1;
   pointer-events: none;
   animation: reveal 900ms ease both;
 }
-.signet-art { position: absolute; inset: -17.5%; width: 135%; height: 135%; }
+.signet-motion { position: absolute; inset: 0; }
+.signet-art, .signet-idle-glow { position: absolute; inset: -17.5%; width: 135%; height: 135%; }
+.signet-idle-glow { opacity: 0; filter: blur(1.5px) drop-shadow(0 0 4px var(--signet-idle)); }
 .is-awakening .terminal { opacity: .55; }
 .terminal {
   position: relative;
@@ -235,6 +243,10 @@ button:disabled { cursor: default; }
   height: 44px;
   color: var(--muted);
 }
+.debug-controls { position: absolute; z-index: 1; top: 26px; left: 30px; display: flex; gap: 12px; }
+.debug-controls button { width: auto; height: 44px; padding: 0 10px; font-size: 12px; color: var(--muted); }
+.debug-controls button:hover { color: var(--control-hover); }
+.debug-controls button:disabled { opacity: .4; }
 .theme-sun { display: none; }
 .signature {
   position: absolute;
@@ -325,18 +337,22 @@ noscript { color: var(--muted); font-size: 12px; }
   to { transform: scaleX(1); }
 }
 @media (max-width: 600px) {
-  .login-scene { gap: 38px; }
-  .signet { width: clamp(140px, 23svh, 190px); }
+  main { padding-inline: 16px; }
+  .login-scene { gap: 16px; }
   .theme-toggle { top: 16px; right: 16px; }
+  .debug-controls { top: 16px; left: 16px; gap: 4px; }
   .terminal { height: 72px; }
-  .input-line { padding: 0 22px; gap: 12px; }
+  .input-line { padding: 0 12px; gap: 6px; }
+  .input-line button { width: 28px; }
+  .prompt { font-size: 13px; }
+  input::placeholder { font-size: 12px; letter-spacing: 0; }
   .flowers { width: 150%; left: -25%; height: 32svh; }
   .flower-position-left { transform: translate(260px, -25px); }
   .flower-position-right { transform: translate(-260px, -25px); }
   .flower-bed-far, .petal-three, .star:nth-child(even) { display: none; }
   .petal-one { top: 29%; left: 8%; }
   .petal-two { top: 70%; }
-  .stars { mask-image: radial-gradient(ellipse 65vw 220px at 50% calc(50% - 18px), transparent 70%, #000 135%); }
+  .stars { mask-image: radial-gradient(ellipse 65vw 220px at 50% 50%, transparent 70%, #000 135%); }
   .signature { bottom: max(18px, env(safe-area-inset-bottom)); gap: 12px; }
   .signature-wordmark { flex-basis: 170px; width: 170px; height: 62px; }
 }
