@@ -11,6 +11,9 @@ const routes = new Map([
   ['/login.css', ['login.css', 'text/css']],
   ['/styles.css', ['styles.css', 'text/css']],
   ['/login.js', ['login.js', 'text/javascript']],
+  ['/signet.js', ['signet.js', 'text/javascript']],
+  ['/assets/images/elysia-signet.png', ['assets/images/elysia-signet.png', 'image/png']],
+  ['/assets/images/elysia-signet-solid.png', ['assets/images/elysia-signet-solid.png', 'image/png']],
 ]);
 
 const server = createServer(async (request, response) => {
@@ -32,7 +35,7 @@ const server = createServer(async (request, response) => {
   try {
     const content = await readFile(new URL(file, import.meta.url));
     response.writeHead(200, {
-      'Content-Type': `${contentType}; charset=utf-8`,
+      'Content-Type': contentType.startsWith('text/') ? `${contentType}; charset=utf-8` : contentType,
       'Content-Length': content.length,
       'Cache-Control': 'no-store',
       'X-Content-Type-Options': 'nosniff',

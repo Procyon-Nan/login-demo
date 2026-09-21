@@ -1,8 +1,12 @@
+import { createSignet } from './signet.js';
+
 const form = document.querySelector('.terminal');
 const input = document.querySelector('#token');
 const submit = form.querySelector('button');
 const status = form.querySelector('.terminal-status');
 const inputLine = form.querySelector('.input-line');
+const scene = document.querySelector('.login-scene');
+let signet;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const themeToggle = document.querySelector('.theme-toggle');
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
@@ -38,6 +42,7 @@ function setTheme(dark) {
   const label = dark ? '切换至明亮主题：人之律者' : '切换至暗色主题：始源之律者';
   themeToggle.setAttribute('aria-label', label);
   themeToggle.title = label;
+  signet?.refreshTheme();
 }
 
 setTheme(systemTheme.matches);
@@ -58,14 +63,17 @@ function enableInput() {
   }
 }
 
-// 动画可能在脚本执行前结束，读取状态以避免输入框一直处于禁用状态。
-if (getComputedStyle(inputLine).opacity === '1' || reducedMotion.matches) {
-  enableInput();
-} else {
-  inputLine.addEventListener('animationend', enableInput, { once: true });
-}
+// 刻印资源和传播场准备好后才允许提交，避免空白刻印直接进入业务页。
+createSignet(document.querySelector('.signet-art')).then(renderer => {
+  signet = renderer;
+  if (getComputedStyle(inputLine).opacity === '1' || reducedMotion.matches) enableInput();
+  else inputLine.addEventListener('animationend', enableInput, { once: true });
+}).catch(error => {
+  console.error('刻印资源初始化失败', error);
+  status.textContent = '页面资源加载失败，请刷新重试';
+});
 
-form.addEventListener('submit', (event) => {
+form.addEventListener('submit', async (event) => {
   event.preventDefault();
   if (submit.disabled) return;
   if (!input.value.trim()) {
@@ -78,13 +86,18 @@ form.addEventListener('submit', (event) => {
   input.value = '';
   input.disabled = true;
   submit.disabled = true;
-  status.textContent = 'opening workspace…';
-  window.setTimeout(() => {
-    form.classList.add('is-leaving');
-    window.setTimeout(() => {
-      window.location.assign('./dashboard.html');
-    }, reducedMotion.matches ? 0 : 300);
-  }, reducedMotion.matches ? 0 : 350);
+  form.setAttribute('aria-busy', 'true');
+  status.textContent = '';
+  scene.classList.add('is-awakening');
+  if (!await signet.play(reducedMotion)) return;
+  scene.classList.add('is-lit');
+  // 前 360ms 保持完整点亮，随后整体淡出，最后才进入业务页。
+  await scene.animate([
+    { opacity: 1, offset: 0 },
+    { opacity: 1, offset: .5 },
+    { opacity: 0, offset: 1 },
+  ], { duration: reducedMotion.matches ? 0 : 720, fill: 'forwards' }).finished;
+  window.location.assign('./dashboard.html');
 });
 
 input.addEventListener('input', () => {
@@ -93,9 +106,12 @@ input.addEventListener('input', () => {
 
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
-    form.classList.remove('is-leaving');
+    scene.getAnimations().forEach(animation => animation.cancel());
+    signet?.reset();
+    scene.classList.remove('is-awakening', 'is-lit');
+    form.removeAttribute('aria-busy');
     status.textContent = '';
     input.value = '';
-    enableInput();
+    if (signet) enableInput();
   }
 });

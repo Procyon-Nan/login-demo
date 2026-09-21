@@ -16,6 +16,8 @@
   --ice-haze: #b9e8f516;
   --edge-glow: #e58abd24;
   --core-glow: #f7a8d84d;
+  --signet-idle: #a28ab9;
+  --signet-flow: #da83b8;
   background: var(--background);
   color: var(--text);
   font-synthesis: none;
@@ -37,6 +39,8 @@
   --ice-haze: #8fd9ed08;
   --edge-glow: #f7a8d833;
   --core-glow: #f7a8d880;
+  --signet-idle: #78658f;
+  --signet-flow: #e58abd;
 }
 
 * { box-sizing: border-box; }
@@ -91,7 +95,7 @@ body {
   position: absolute;
   inset: 0;
   /* 让输入框及状态文案周围保持安静，不让星点穿过文字。 */
-  mask-image: radial-gradient(ellipse 340px 135px at 50% calc(50% - 18px), transparent 75%, #000 125%);
+  mask-image: radial-gradient(ellipse 340px 240px at 50% calc(50% - 18px), transparent 75%, #000 125%);
 }
 .star {
   position: absolute;
@@ -116,16 +120,25 @@ body {
 .star-sea *, [data-theme="dark"] .flower-sea * { animation-play-state: paused; }
 [data-theme="dark"] .star-sea * { animation-play-state: running; }
 body[data-background-paused] .ambient * { animation-play-state: paused; }
-body:has(#token:not(:placeholder-shown)) .ambient { opacity: .55; }
+body:has(#token:not(:placeholder-shown)) .ambient, body:has(.is-awakening) .ambient { opacity: .55; }
 .ambient { transition: opacity 1.2s ease; }
-main { position: relative; min-height: 100svh; display: grid; place-items: center; padding: 100px 28px; }
+main { position: relative; min-height: 100svh; display: grid; place-items: center; padding: 90px 28px 140px; }
+.login-scene { width: min(100%, 480px); display: grid; justify-items: center; gap: 46px; }
+.signet {
+  position: relative;
+  width: clamp(170px, 25svh, 220px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  animation: reveal 900ms ease both;
+}
+.signet-art { position: absolute; inset: -17.5%; width: 135%; height: 135%; }
+.is-awakening .terminal { opacity: .55; }
 .terminal {
   position: relative;
   width: min(100%, 480px);
-  height: 64px;
+  height: 80px;
   margin: 0;
-  transform: translateY(-18px);
-  transition: opacity 300ms ease, transform 300ms ease;
+  transition: opacity 500ms ease;
 }
 .origin {
   position: absolute;
@@ -136,29 +149,42 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
   background: var(--control);
   transform: translate(-50%, -50%) rotate(45deg);
   box-shadow: 0 0 12px var(--core-glow);
-  animation: origin 1.15s ease both;
+  animation: origin 650ms ease both;
 }
 .frame {
   position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
   pointer-events: none;
-  border-color: var(--line);
-  border-style: solid;
-  border-width: 0;
-  animation: unfold 950ms cubic-bezier(.65, 0, .2, 1) 350ms both;
-  transition: border-color 200ms ease, filter 200ms ease;
+  fill: none;
+  stroke-width: 1;
+  animation: unfold-diagonal 750ms cubic-bezier(.22, .7, .25, 1) 300ms both;
+  transition: filter 200ms ease;
 }
-.frame-upper { border-top-width: 1px; border-left-width: 1px; }
-.frame-lower { border-bottom-width: 1px; border-right-width: 1px; }
+.frame-upper { --from-x: 47.5%; --from-y: 37.5%; }
+.frame-lower { --from-x: -47.5%; --from-y: -37.5%; }
+.frame use { vector-effect: non-scaling-stroke; }
+.frame-petal { stroke: var(--line); fill: var(--edge-glow); transition: stroke 200ms ease; }
+.frame-arc, .frame-tip {
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1;
+  stroke-linecap: butt;
+  animation: frame-trace 850ms cubic-bezier(.25, .6, .3, 1) 550ms both;
+}
+.frame-arc { stroke: url(#input-thread); }
+.frame-tip { stroke: var(--line); opacity: .5; }
 .terminal:focus-within .frame {
-  border-color: var(--focus);
   filter: drop-shadow(0 0 4px var(--edge-glow));
 }
+.terminal:focus-within .frame-petal { stroke: var(--focus); }
 .input-line {
   position: relative;
   display: flex;
   align-items: center;
   height: 100%;
-  padding: 0 20px;
+  padding: 0 28px;
   gap: 16px;
   opacity: 0;
   animation: reveal 420ms ease 1.15s forwards;
@@ -200,7 +226,6 @@ button:hover { color: var(--control-hover); }
 button:focus-visible { outline: 1px solid var(--focus); outline-offset: 3px; }
 button:disabled { cursor: default; }
 .terminal-status { position: absolute; top: 100%; left: 0; margin: 16px 0 0; color: var(--muted); font-size: 11px; letter-spacing: 1px; }
-.terminal.is-leaving { opacity: 0; transform: translateY(-24px); }
 .theme-toggle {
   position: absolute;
   z-index: 1;
@@ -257,10 +282,15 @@ noscript { color: var(--muted); font-size: 12px; }
   25%, 50% { opacity: 1; transform: translate(-50%, -50%) rotate(45deg) scale(1); }
   100% { opacity: 0; transform: translate(-50%, -50%) rotate(45deg) scale(.4); }
 }
-@keyframes unfold {
-  from { inset: 50%; opacity: 0; }
-  12% { opacity: 1; }
-  to { inset: 0; opacity: 1; }
+/* 两枚晶瓣先从同一个中心分离，只沿左上、右下运动；弧线随后展开。 */
+@keyframes unfold-diagonal {
+  from { transform: translate(var(--from-x), var(--from-y)); opacity: 0; }
+  8% { opacity: 1; }
+  to { transform: translate(0, 0); opacity: 1; }
+}
+@keyframes frame-trace {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
 }
 @keyframes reveal {
   from { opacity: 0; transform: translateY(3px); }
@@ -295,16 +325,18 @@ noscript { color: var(--muted); font-size: 12px; }
   to { transform: scaleX(1); }
 }
 @media (max-width: 600px) {
+  .login-scene { gap: 38px; }
+  .signet { width: clamp(140px, 23svh, 190px); }
   .theme-toggle { top: 16px; right: 16px; }
-  .terminal { height: 60px; }
-  .input-line { padding: 0 16px; gap: 12px; }
+  .terminal { height: 72px; }
+  .input-line { padding: 0 22px; gap: 12px; }
   .flowers { width: 150%; left: -25%; height: 32svh; }
   .flower-position-left { transform: translate(260px, -25px); }
   .flower-position-right { transform: translate(-260px, -25px); }
   .flower-bed-far, .petal-three, .star:nth-child(even) { display: none; }
   .petal-one { top: 29%; left: 8%; }
   .petal-two { top: 70%; }
-  .stars { mask-image: radial-gradient(ellipse 65vw 115px at 50% calc(50% - 18px), transparent 70%, #000 135%); }
+  .stars { mask-image: radial-gradient(ellipse 65vw 220px at 50% calc(50% - 18px), transparent 70%, #000 135%); }
   .signature { bottom: max(18px, env(safe-area-inset-bottom)); gap: 12px; }
   .signature-wordmark { flex-basis: 170px; width: 170px; height: 62px; }
 }
