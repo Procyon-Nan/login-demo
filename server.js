@@ -7,10 +7,10 @@ const port = 11451;
 const routes = new Map([
   ['/', ['index.html', 'text/html']],
   ['/index.html', ['index.html', 'text/html']],
-  ['/dashboard.html', ['dashboard.html', 'text/html']],
   ['/login.css', ['login.css', 'text/css']],
   ['/backgrounds.css', ['backgrounds.css', 'text/css']],
-  ['/styles.css', ['styles.css', 'text/css']],
+  ['/theme.js', ['theme.js', 'text/javascript']],
+  ['/login-adapter.js', ['login-adapter.js', 'text/javascript']],
   ['/login.js', ['login.js', 'text/javascript']],
   ['/token-input.js', ['token-input.js', 'text/javascript']],
   ['/signet.js', ['signet.js', 'text/javascript']],
@@ -59,6 +59,6 @@ server.on('error', (error) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`登录演示服务已启动：http://${host}:${port}`);
+  console.log(`登录页服务已启动：http://${host}:${port}`);
   console.log('按 Ctrl+C 停止服务。');
 });

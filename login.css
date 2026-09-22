@@ -68,6 +68,7 @@ body {
 body:has(.is-awakening) .background-particles { opacity: .45; }
 main { position: relative; min-height: 100svh; display: grid; place-items: center; padding: 120px 28px; }
 .login-scene {
+  position: relative;
   --scene-gap: clamp(24px, 7vw, 100px);
   --signet-width: 400px; /* 桌面刻印最大宽度，窄屏竖排尺寸见下方媒体查询。 */
   --input-width: 360px; /* 密钥输入框最大宽度：调小变短、调大变长，组合总宽自动跟随。 */
@@ -273,6 +274,7 @@ button:hover { color: var(--control-hover); }
 button:focus-visible { outline: 1px solid var(--focus); outline-offset: 3px; }
 button:disabled { cursor: default; }
 .terminal-status { position: absolute; top: 100%; left: 0; margin: 16px 0 0; color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+.completion-status { position: absolute; top: 100%; left: 0; width: 100%; margin: 16px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
 .theme-toggle {
   position: absolute;
   z-index: 1;
@@ -282,10 +284,6 @@ button:disabled { cursor: default; }
   height: 44px;
   color: var(--muted);
 }
-.debug-controls { position: absolute; z-index: 1; top: 26px; left: 30px; display: flex; gap: 12px; }
-.debug-controls button { width: auto; height: 44px; padding: 0 10px; font-size: 12px; color: var(--muted); }
-.debug-controls button:hover { color: var(--control-hover); }
-.debug-controls button:disabled { opacity: .4; }
 .theme-sun { display: none; }
 .signature {
   position: absolute;
@@ -413,7 +411,6 @@ noscript { color: var(--muted); font-size: 12px; }
 @media (max-width: 600px) {
   main { padding-inline: 16px; }
   .theme-toggle { top: 16px; right: 16px; }
-  .debug-controls { top: 16px; left: 16px; gap: 4px; }
   .input-line { padding: 0 12px; }
   .failure-segments { left: 12px; grid-template-columns: repeat(5, 10px); gap: 3px; }
   [data-phase="exhausted"] .terminal-welcome { padding: 0 12px; font-size: 12px; letter-spacing: 0; text-indent: 0; }

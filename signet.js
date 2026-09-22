@@ -210,7 +210,7 @@ function createGlowField(pixels, arrival) {
 }
 
 export async function createSignet(canvas, idleGlowCanvas) {
-  const solid = await loadImage('./assets/images/elysia-signet-solid.png');
+  const solid = await loadImage(new URL('./assets/images/elysia-signet-solid.png', import.meta.url));
   const fieldPixels = sampleImage(solid, FIELD_SIZE);
   const field = buildArrivalField(fieldPixels, FIELD_SIZE);
   const glowAt = createGlowField(fieldPixels, field);
