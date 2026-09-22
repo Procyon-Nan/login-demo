@@ -219,16 +219,16 @@ export function createSignetFracture({ pixels, contour, size, arrivalAt, detailP
     edgeContext.drawImage(detailCore, 0, 0, size, size);
     edgeContext.setTransform(1, 0, 0, 1, 0, 0);
     edgeContext.globalCompositeOperation = 'source-over';
-    const mask = surface(edge.width, edge.height);
-    const maskContext = mask.getContext('2d');
-    maskContext.scale(detailScale, detailScale);
-    maskContext.translate(-left, -top);
-    maskContext.clip(path);
-    maskContext.drawImage(detailCore, 0, 0, size, size);
-    const face = surface(mask.width, mask.height);
-    face.getContext('2d').drawImage(mask, 0, 0);
+    const face = surface(edge.width, edge.height);
+    const faceContext = face.getContext('2d');
+    faceContext.save();
+    faceContext.scale(detailScale, detailScale);
+    faceContext.translate(-left, -top);
+    faceContext.clip(path);
+    faceContext.drawImage(detailCore, 0, 0, size, size);
+    faceContext.restore();
     return {
-      ...site, path, edge, face, sides: traceContours(mask, detailScale), left, top, width: right - left, height: bottom - top,
+      ...site, path, edge, face, sides: traceContours(face, detailScale), left, top, width: right - left, height: bottom - top,
       arrival: site.arrival / site.mass,
       pose: { ...REST_POSE }, flash: 0, chipStage: Infinity,
     };

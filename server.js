@@ -17,7 +17,6 @@ const routes = new Map([
   ['/signet-fracture.js', ['signet-fracture.js', 'text/javascript']],
   ['/signet-cracks.js', ['signet-cracks.js', 'text/javascript']],
   ['/background-particles.js', ['background-particles.js', 'text/javascript']],
-  ['/assets/images/elysia-signet.png', ['assets/images/elysia-signet.png', 'image/png']],
   ['/assets/images/elysia-signet-solid.png', ['assets/images/elysia-signet-solid.png', 'image/png']],
 ]);
 

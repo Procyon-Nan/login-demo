@@ -105,11 +105,6 @@ document.addEventListener('login-theme-change', () => {
   backgroundParticles.refreshTheme();
 });
 
-function enableInput() {
-  input.disabled = false;
-  tokenInput.start();
-}
-
 function shakeInput() {
   inputShake?.cancel();
   if (reducedMotion.matches) return;
@@ -158,11 +153,12 @@ async function enterLogin() {
   if (!await runPhase('opening', form, run, true)) return;
   scene.dataset.phase = 'ready';
   backgroundParticles.start();
-  enableInput();
+  input.disabled = false;
+  tokenInput.start();
 }
 
 // 资源准备好后先在中央显现刻印，左移完成后才展开输入框。
-createSignet(signetCanvas, signetIdleGlow).then(renderer => {
+createSignet(signetCanvas, signetIdleGlow, reducedMotion).then(renderer => {
   signet = renderer;
   return enterLogin();
 }).catch(error => {
@@ -182,7 +178,7 @@ async function rejectLogin() {
     input.blur();
     tokenInput.reset();
   }
-  if (await signet.breakApart(failedAttempts, reducedMotion) && exhausted && run === flowId) {
+  if (await signet.breakApart(failedAttempts) && exhausted && run === flowId) {
     // 保留当前整体位置与柔光，后续由每块晶片独立漂浮，不突然回落。
     idleAnimations.forEach(animation => animation.pause());
     input.value = '';
@@ -249,7 +245,7 @@ async function playSignet(result) {
   scene.dataset.phase = 'waiting-peak';
   if (!await peakReady || run !== flowId) return;
   scene.dataset.phase = 'lighting';
-  if (!await signet.play(reducedMotion) || run !== flowId) return;
+  if (!await signet.play() || run !== flowId) return;
   scene.classList.add('is-lit');
   scene.dataset.phase = 'lit';
   if (!loginAdapter.onAuthenticated) {

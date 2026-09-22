@@ -299,7 +299,6 @@ export function createBackgroundParticles(canvas, reducedMotion, protectedElemen
   }
 
   refreshTheme();
-  syncMotion();
   window.addEventListener('resize', resize);
   document.addEventListener('visibilitychange', syncMotion);
   reducedMotion.addEventListener('change', syncMotion);

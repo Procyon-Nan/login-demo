@@ -209,7 +209,7 @@ function createGlowField(pixels, arrival) {
   };
 }
 
-export async function createSignet(canvas, idleGlowCanvas) {
+export async function createSignet(canvas, idleGlowCanvas, reducedMotion) {
   const solid = await loadImage(new URL('./assets/images/elysia-signet-solid.png', import.meta.url));
   const fieldPixels = sampleImage(solid, FIELD_SIZE);
   const field = buildArrivalField(fieldPixels, FIELD_SIZE);
@@ -250,7 +250,7 @@ export async function createSignet(canvas, idleGlowCanvas) {
     active.push({
       offset: i * 4, core, glow: sourceAlpha - core, line, fieldX, fieldY,
       color: [fillPixels[i * 4], fillPixels[i * 4 + 1], fillPixels[i * 4 + 2]],
-      coreWeight: sourceAlpha ? core / sourceAlpha : 0,
+      coreWeight: core / sourceAlpha,
       arrival: interpolate(field, fieldX, fieldY),
     });
   }
@@ -259,7 +259,6 @@ export async function createSignet(canvas, idleGlowCanvas) {
   let driftRequest = 0;
   let driftTime = 0;
   let drifting = false;
-  let motionPreference;
   let animationId = 0;
   let finish = null;
   let idleColor;
@@ -335,7 +334,7 @@ export async function createSignet(canvas, idleGlowCanvas) {
   // 碎片待机只合成缓存纹理；后台或减少动态效果时暂停，恢复时不跳过漂移。
   function syncMotion() {
     if (!drifting) return;
-    if (document.hidden || motionPreference.matches) {
+    if (document.hidden || reducedMotion.matches) {
       cancelAnimationFrame(driftRequest);
       driftRequest = 0;
       return;
@@ -357,7 +356,7 @@ export async function createSignet(canvas, idleGlowCanvas) {
     draw(0);
   }
   // 点亮与破碎共用一个动画任务，取消后保留当前画面，可从任意裂损状态接续。
-  function animate(duration, reducedMotion, render) {
+  function animate(duration, render) {
     if (reducedMotion.matches) { render(1); return Promise.resolve(true); }
     return new Promise(resolve => {
       finish = resolve;
@@ -375,24 +374,23 @@ export async function createSignet(canvas, idleGlowCanvas) {
       request = requestAnimationFrame(tick);
     });
   }
-  function play(reducedMotion) {
+  function play() {
     cancel();
     const startProgress = progress;
-    return animate(LIGHT_DURATION, reducedMotion, time => {
+    return animate(LIGHT_DURATION, time => {
       // 光流推进的同时，各晶片按自己的到达时间归位、闭合断口。
       draw(startProgress + (1 - startProgress) * time * (2 - time));
     });
   }
-  async function breakApart(level, reducedMotion) {
+  async function breakApart(level) {
     cancel();
     const run = animationId;
     fracture.begin(level);
-    const completed = await animate(level === 5 ? SHATTER_DURATION : FRACTURE_DURATION, reducedMotion, time => {
+    const completed = await animate(level === 5 ? SHATTER_DURATION : FRACTURE_DURATION, time => {
       fracture.update(time);
       compose();
     });
     if (!completed || run !== animationId) return false;
-    motionPreference = reducedMotion;
     driftTime = 0;
     drifting = fracture.hasFloatingPieces();
     syncMotion();
