@@ -75,7 +75,7 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
   container-type: inline-size;
   /* 尺寸调节：下方两列分别控制刻印、输入框的宽度比例，fr 不是固定像素。
      想让桌面刻印为 400px、输入框为 480px，可配 400fr / 480fr，
-     并把这里的总宽改为 980px（400 + 最大间距 100 + 480）；窄屏自动缩小。 */
+     并把这里的总宽改为 980px（400 + 最大间距 100 + 480）；移动端尺寸见下方媒体查询。 */
   width: min(100%, 950px);
   display: grid;
   grid-template-columns: minmax(0, 500fr) minmax(0, 480fr);
@@ -395,12 +395,27 @@ noscript { color: var(--muted); font-size: 12px; }
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
+@media (max-width: 768px) {
+  main { padding: 96px 24px; }
+  .login-scene {
+    --scene-gap: clamp(24px, 5svh, 48px);
+    --terminal-height: 72px;
+    width: min(100%, 400px);
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+  .signet {
+    width: min(80%, 300px, 42svh);
+    /* 初始及点亮时，下移半个间距与输入框高度，回到组合区域的正中央。
+       就位阶段沿用 translate: 0 0，使原有平移流程自动改为上下移动。 */
+    translate: 0 calc((var(--scene-gap) + var(--terminal-height)) / 2);
+  }
+  .terminal { height: var(--terminal-height); }
+}
 @media (max-width: 600px) {
   main { padding-inline: 16px; }
-  .login-scene { --scene-gap: 16px; }
   .theme-toggle { top: 16px; right: 16px; }
   .debug-controls { top: 16px; left: 16px; gap: 4px; }
-  .terminal { height: 72px; }
   .input-line { padding: 0 12px; }
   .failure-segments { left: 12px; grid-template-columns: repeat(5, 10px); gap: 3px; }
   [data-phase="exhausted"] .terminal-welcome { padding: 0 12px; font-size: 12px; letter-spacing: 0; text-indent: 0; }
