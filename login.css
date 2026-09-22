@@ -19,9 +19,6 @@
   --core-glow: #f7a8d84d;
   --signet-idle: #65408b;
   --signet-flow: #da83b8;
-  --firefly-pink: 202, 112, 167;
-  --firefly-violet: 143, 97, 175;
-  --firefly-core: 177, 103, 163;
   background: var(--background);
   color: var(--text);
   font-synthesis: none;
@@ -60,7 +57,7 @@ body {
     radial-gradient(ellipse at 75% 70%, var(--violet-haze), transparent 55%),
     radial-gradient(ellipse at 27% 24%, var(--ice-haze), transparent 42%);
 }
-.fireflies {
+.background-particles {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -68,17 +65,17 @@ body {
   pointer-events: none;
   transition: opacity 900ms ease;
 }
-body:has(.is-awakening) .fireflies { opacity: .45; }
+body:has(.is-awakening) .background-particles { opacity: .45; }
 main { position: relative; min-height: 100svh; display: grid; place-items: center; padding: 120px 28px; }
 .login-scene {
   --scene-gap: clamp(24px, 7vw, 100px);
+  --signet-width: 400px; /* 桌面刻印最大宽度，窄屏竖排尺寸见下方媒体查询。 */
+  --input-width: 360px; /* 密钥输入框最大宽度：调小变短、调大变长，组合总宽自动跟随。 */
   container-type: inline-size;
-  /* 尺寸调节：下方两列分别控制刻印、输入框的宽度比例，fr 不是固定像素。
-     想让桌面刻印为 400px、输入框为 480px，可配 400fr / 480fr，
-     并把这里的总宽改为 980px（400 + 最大间距 100 + 480）；移动端尺寸见下方媒体查询。 */
-  width: min(100%, 950px);
+  /* 总宽由刻印、间距和输入框共同决定，缩短输入框后仍保持整体居中。 */
+  width: min(100%, calc(var(--signet-width) + var(--scene-gap) + var(--input-width)));
   display: grid;
-  grid-template-columns: minmax(0, 500fr) minmax(0, 480fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, var(--input-width));
   align-items: center;
   gap: var(--scene-gap);
 }
@@ -112,7 +109,7 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
 [data-phase="closing"] .failure-meter { animation: meter-fold 310ms cubic-bezier(.45, 0, .3, 1) 50ms both; }
 .terminal {
   position: relative;
-  width: min(100%, 480px);
+  width: min(100%, var(--input-width));
   height: 80px;
   margin: 0;
   visibility: hidden;
@@ -400,6 +397,7 @@ noscript { color: var(--muted); font-size: 12px; }
   .login-scene {
     --scene-gap: clamp(24px, 5svh, 48px);
     --terminal-height: 72px;
+    --input-width: 300px; /* 移动端输入框最大宽度，独立调节，不影响上方刻印尺寸。 */
     width: min(100%, 400px);
     grid-template-columns: minmax(0, 1fr);
     justify-items: center;

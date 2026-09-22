@@ -1,15 +1,21 @@
-// 可调参数：修改后刷新页面生效；数量包含正在淡入、淡出和被遮挡的光点。
+// 暗色萤火参数：数量包含正在淡入、淡出和被遮挡的光点，修改后刷新生效。
 const DESKTOP_COUNT = 30; // 视口宽度 >= 600px 时的光点数量。
 const MOBILE_COUNT = 25; // 视口宽度 < 600px 时的光点数量。
 const LIFETIME_RANGE = [30, 60]; // 基础寿命范围，单位秒；每次出生随机取值。
 // 上升速度范围，单位为每秒移动的视口高度比例；调小会延长留在屏幕内的时间。
 const RISE_SPEED_RANGE = [.023, .034];
 const SPAWN_Y_RANGE = [1 / 3, .98]; // 出生高度范围：0 为页顶、1 为页底，仅在下方三分之二区域出生。
+// 亮色花瓣参数：尺寸为绘制半径，速度为每秒下落的视口高度比例。
+const PETAL_DESKTOP_COUNT = 18;
+const PETAL_MOBILE_COUNT = 12;
+const PETAL_SIZE_RANGE = [7, 12]; // 约 14–28px 的完整花瓣，远处及窄屏会再缩小。
+const PETAL_FALL_RANGE = [.018, .028];
+const PETAL_SPAWN_Y_RANGE = [-.10, .18]; // 从上方进入，或在页顶附近轻柔淡入。
 const OCCLUSION_PADDING = 18; // 主体外围完全遮挡的留白，单位 px。
 const OCCLUSION_FEATHER = 82; // 桌面遮挡边缘的渐变宽度，单位 px，越大吞没和显现越柔和。
 const MOBILE_OCCLUSION_FEATHER = 40; // 窄屏的遮挡渐变宽度，单位 px。
 const OCCLUSION_FADE_MS = 180; // 主体显隐时遮挡强度的平滑响应时间，单位 ms。
-// 实际寿命仍受上边缘限制；被主体遮挡不会改变寿命或触发重生。
+// 被主体遮挡不会改变寿命或触发重生，重新移出遮挡区后继续显现。
 const TRAIL_STEPS = 48;
 const random = (min, max) => min + Math.random() * (max - min);
 const smoothstep = (a, b, value) => {
@@ -17,7 +23,7 @@ const smoothstep = (a, b, value) => {
   return t * t * (3 - 2 * t);
 };
 
-export function createFireflies(canvas, reducedMotion, protectedElements) {
+export function createBackgroundParticles(canvas, reducedMotion, protectedElements) {
   const context = canvas.getContext('2d');
   let width = 0;
   let height = 0;
@@ -26,9 +32,15 @@ export function createFireflies(canvas, reducedMotion, protectedElements) {
   let request;
   let palette;
   let core;
+  let daylight;
   let flights = [];
   let active = false;
   const occluders = protectedElements.map(element => ({ element, opacity: null }));
+  // 两种不对称的薄瓣轮廓，轻微缺口与弯曲边缘避免叶片或圆点的观感。
+  const petalShapes = [
+    new Path2D('M0 1.2C-.25 .5-1.02 .03-.82-.68C-.74-1.17-.17-1.14 .02-.86C.27-1.12 .83-1.1 .91-.63C1.02 .12 .21 .83 0 1.2Z'),
+    new Path2D('M0 1.15C-.35 .48-1-.1-.78-.73C-.6-1.14 .3-1.18 .6-.82C1.05-.15 .57 .77 0 1.15Z'),
+  ];
 
   // 可拉伸的柔边遮罩：中心像素填满主体区域，四边与四角保留平滑渐变。
   const maskRadius = 64;
@@ -44,6 +56,7 @@ export function createFireflies(canvas, reducedMotion, protectedElements) {
   maskContext.fillRect(0, 0, mask.width, mask.height);
 
   function spawn(index, count) {
+    if (daylight) return spawnPetal(index, count);
     const flight = {
       // 按横向分区错开出生点，每次重生重新抽取方向、弧度和寿命。
       x: (index + random(.1, .9)) / count,
@@ -66,6 +79,60 @@ export function createFireflies(canvas, reducedMotion, protectedElements) {
     return flight;
   }
 
+  function spawnPetal(index, count) {
+    const petal = {
+      x: (index + random(.1, .9)) / count,
+      y: random(...PETAL_SPAWN_Y_RANGE),
+      fall: random(...PETAL_FALL_RANGE),
+      drift: random(-.0015, .0015),
+      sway: random(.025, .06),
+      period: random(10, 18),
+      phase: random(0, Math.PI * 2),
+      flutter: random(7, 13),
+      rotation: random(-Math.PI, Math.PI),
+      spin: random(-.08, .08),
+      size: random(...PETAL_SIZE_RANGE),
+      depth: random(.65, 1),
+      shape: Math.floor(random(0, petalShapes.length)),
+      fadeDuration: random(3, 5),
+      born: elapsed + random(0, 5000),
+    };
+    // 缓缓穿过视口，在下边缘淡出；静态模式将花瓣分布在下落路径上。
+    petal.lifetime = (1.04 - petal.y) / petal.fall;
+    if (reducedMotion.matches) petal.born = elapsed - petal.lifetime * random(.15, .8) * 1000;
+    return petal;
+  }
+
+  function drawPetal(petal, index, age, opacity) {
+    const angle = petal.phase + age * Math.PI * 2 / petal.period;
+    const face = Math.abs(Math.cos(petal.phase + age * Math.PI * 2 / petal.flutter));
+    const x = (petal.x + petal.drift * age) * width
+      + (Math.sin(angle) - Math.sin(petal.phase)) * petal.sway * Math.min(width, 1000);
+    const y = (petal.y + petal.fall * age) * height;
+    const size = petal.size * petal.depth * (width < 600 ? .8 : 1);
+    const color = palette[index % palette.length];
+    context.save();
+    context.translate(x, y);
+    context.rotate(petal.rotation + Math.sin(angle) * .45 + age * petal.spin);
+    // 横向缓慢收窄再展开，表现翻面；保留最小厚度，避免突然消失。
+    context.scale(size * (.28 + face * .72), size * (.88 + Math.sin(angle) * .12));
+    context.globalAlpha = opacity * petal.depth * (.65 + face * .15);
+    const tint = context.createLinearGradient(-.8, -.9, .6, 1.1);
+    tint.addColorStop(0, 'rgba(255, 241, 247, .88)');
+    tint.addColorStop(.35, `rgba(${color}, .55)`);
+    tint.addColorStop(1, `rgba(${color}, .9)`);
+    context.fillStyle = tint;
+    context.fill(petalShapes[petal.shape]);
+    // 花瓣内侧的一道浅折痕，不描整圈硬边，也不叠加发光尾迹。
+    context.beginPath();
+    context.moveTo(0, 1.05);
+    context.bezierCurveTo(-.06, .55, .18, .02, .04, -.56);
+    context.lineWidth = .045;
+    context.strokeStyle = 'rgba(255, 247, 252, .45)';
+    context.stroke();
+    context.restore();
+  }
+
   function point(flight, t) {
     const angle = flight.phase + t * Math.PI * 2 / flight.period;
     return {
@@ -82,13 +149,17 @@ export function createFireflies(canvas, reducedMotion, protectedElements) {
       flights[index] = spawn(index, flights.length);
       return;
     }
+    const opacity = smoothstep(0, Math.min(2.5, flight.lifetime * .3), age)
+      * (1 - smoothstep(flight.lifetime - flight.fadeDuration, flight.lifetime, age));
+    if (daylight) {
+      drawPetal(flight, index, age, opacity);
+      return;
+    }
     const color = palette[index % palette.length];
     const size = flight.size * (width < 600 ? .8 : 1);
     const tail = Math.min(age, flight.tailDuration);
     const points = Array.from({ length: TRAIL_STEPS + 1 }, (_, i) =>
       point(flight, age - tail * (1 - i / TRAIL_STEPS)));
-    const opacity = smoothstep(0, Math.min(2.5, flight.lifetime * .3), age)
-      * (1 - smoothstep(flight.lifetime - flight.fadeDuration, flight.lifetime, age));
     const from = points[TRAIL_STEPS];
     const gradient = context.createLinearGradient(points[0].x, points[0].y, from.x, from.y);
     gradient.addColorStop(0, `rgba(${color}, 0)`);
@@ -168,7 +239,7 @@ export function createFireflies(canvas, reducedMotion, protectedElements) {
     context.clearRect(0, 0, width, height);
     if (!active) return;
     flights.forEach(drawFlight);
-    // 仅擦除落在主体后方的像素；外侧尾迹保留，移动出来后自然重新显现。
+    // 仅擦除落在主体后方的像素；花瓣与萤火共用平滑遮挡。
     applyOcclusion(delta);
   }
 
@@ -179,16 +250,22 @@ export function createFireflies(canvas, reducedMotion, protectedElements) {
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    const count = width < 600 ? MOBILE_COUNT : DESKTOP_COUNT;
+    const count = daylight
+      ? (width < 600 ? PETAL_MOBILE_COUNT : PETAL_DESKTOP_COUNT)
+      : (width < 600 ? MOBILE_COUNT : DESKTOP_COUNT);
     if (active && flights.length !== count) flights = Array.from({ length: count }, (_, i) => spawn(i, count));
     draw();
   }
 
   function refreshTheme() {
     const style = getComputedStyle(document.documentElement);
-    palette = ['--firefly-pink', '--firefly-violet'].map(name => style.getPropertyValue(name).trim());
+    const nextDaylight = document.documentElement.dataset.theme !== 'dark';
+    if (daylight !== nextDaylight) flights = [];
+    daylight = nextDaylight;
+    palette = (daylight ? ['--petal-blush', '--petal-lilac'] : ['--firefly-pink', '--firefly-violet'])
+      .map(name => style.getPropertyValue(name).trim());
     core = style.getPropertyValue('--firefly-core').trim();
-    draw();
+    resize();
   }
 
   function tick(now) {
@@ -222,7 +299,6 @@ export function createFireflies(canvas, reducedMotion, protectedElements) {
   }
 
   refreshTheme();
-  resize();
   syncMotion();
   window.addEventListener('resize', resize);
   document.addEventListener('visibilitychange', syncMotion);

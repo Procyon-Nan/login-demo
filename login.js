@@ -1,5 +1,5 @@
 import { createSignet } from './signet.js';
-import { createFireflies } from './fireflies.js';
+import { createBackgroundParticles } from './background-particles.js';
 import { createTokenInput } from './token-input.js';
 
 const form = document.querySelector('.terminal');
@@ -20,7 +20,7 @@ const debugReset = document.querySelector('#debug-reset');
 let signet;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const tokenInput = createTokenInput(input, reducedMotion);
-const fireflies = createFireflies(document.querySelector('.fireflies'), reducedMotion, [signetElement, form, signature]);
+const backgroundParticles = createBackgroundParticles(document.querySelector('.background-particles'), reducedMotion, [signetElement, form, signature]);
 const themeToggle = document.querySelector('.theme-toggle');
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 let themeManuallySelected = false;
@@ -98,13 +98,19 @@ reducedMotion.addEventListener('change', () => {
 
 document.addEventListener('visibilitychange', syncSignetMotion);
 
+function syncBackgroundMotion() {
+  document.documentElement.toggleAttribute('data-background-paused', document.hidden);
+}
+document.addEventListener('visibilitychange', syncBackgroundMotion);
+syncBackgroundMotion();
+
 function setTheme(dark) {
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   const label = dark ? '切换至明亮主题：人之律者' : '切换至暗色主题：始源之律者';
   themeToggle.setAttribute('aria-label', label);
   themeToggle.title = label;
   signet?.refreshTheme();
-  fireflies.refreshTheme();
+  backgroundParticles.refreshTheme();
 }
 
 setTheme(systemTheme.matches);
@@ -157,7 +163,7 @@ async function enterLogin() {
   updateFailureMeter();
   scene.classList.remove('is-locked');
   inputShake?.cancel();
-  fireflies.reset();
+  backgroundParticles.reset();
   tokenInput.reset();
   welcomeText.textContent = '';
   input.disabled = true;
@@ -170,7 +176,7 @@ async function enterLogin() {
   if (!await runPhase('shifting', signetElement, run)) return;
   if (!await runPhase('opening', form, run, true)) return;
   scene.dataset.phase = 'ready';
-  fireflies.start();
+  backgroundParticles.start();
   enableInput();
 }
 

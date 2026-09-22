@@ -1,0 +1,70 @@
+/* 晨雾花庭：暖白基底与三层浅粉紫薄雾，主体就位后才缓慢舒展。 */
+:root {
+  --petal-blush: 214, 139, 176;
+  --petal-lilac: 184, 143, 190;
+}
+.morning-garden {
+  --mist-play: paused;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(155deg, #fbf6ef, #fcf9fd 48%, #f4eaf3);
+  transition: opacity 700ms ease;
+}
+body:has(.login-scene:is([data-phase="ready"], [data-phase="exhausted"], .is-awakening, .is-lit)) .morning-garden {
+  --mist-play: running;
+}
+.mist-bank { position: absolute; inset: -12%; animation: mist-breathe 28s ease-in-out infinite alternate; }
+.mist-bank-rose {
+  background:
+    radial-gradient(ellipse 42% 34% at 8% 76%, #e7bdd4a8, transparent 100%),
+    radial-gradient(ellipse 28% 22% at 87% 25%, #edcbd77a, transparent 100%);
+  animation-delay: -9s;
+}
+.mist-bank-lilac {
+  background:
+    radial-gradient(ellipse 43% 31% at 92% 78%, #cdbfe0a3, transparent 100%),
+    radial-gradient(ellipse 26% 36% at 5% 35%, #ded1e787, transparent 100%);
+  animation-name: mist-drift;
+  animation-duration: 35s;
+  animation-delay: -18s;
+}
+.mist-bank-pearl {
+  background:
+    radial-gradient(ellipse 42% 22% at 28% 70%, #fffdf3b8, transparent 100%),
+    radial-gradient(ellipse 32% 35% at 80% 37%, #fffaf3ad, transparent 100%);
+  animation-duration: 23s;
+  animation-delay: -5s;
+}
+.mist-bank { animation-play-state: var(--mist-play); }
+/* 中央和底部字标保留柔和留白，移动端将中央留白纵向拉长。 */
+.background-clearance {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 50% 30% at 50% 48%, #fcf9fded 12%, #fcf9fd88 55%, transparent 100%),
+    linear-gradient(transparent 83%, #fcf9fd70);
+}
+@keyframes mist-breathe {
+  from { transform: translate(-2%, 2%) scale(1); }
+  to { transform: translate(3%, -3%) scale(1.09); }
+}
+@keyframes mist-drift {
+  from { transform: translate(3%, -2%) scale(1.06); }
+  to { transform: translate(-3%, 3%) scale(.98); }
+}
+body:has(.is-awakening) .morning-garden { opacity: .55; }
+:root[data-theme="dark"] body .morning-garden { opacity: 0; }
+:root:is([data-theme="dark"], [data-background-paused]) .mist-bank { animation-play-state: paused; }
+@media (max-width: 768px) {
+  .background-clearance {
+    background:
+      radial-gradient(ellipse 75% 37% at 50% 48%, #fcf9fdf0 10%, #fcf9fd88 60%, transparent 100%),
+      linear-gradient(transparent 80%, #fcf9fd88);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mist-bank { animation: none !important; }
+  .morning-garden { transition: none; }
+}

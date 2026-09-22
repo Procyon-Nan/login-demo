@@ -6,11 +6,18 @@
     <meta name="color-scheme" content="light dark" />
     <title>登录 · 云序</title>
     <link rel="stylesheet" href="./login.css" />
+    <link rel="stylesheet" href="./backgrounds.css" />
     <link rel="preload" href="./assets/images/elysia-signet-solid.png" as="image" />
     <script src="./login.js" type="module"></script>
   </head>
   <body>
-    <canvas class="fireflies" aria-hidden="true"></canvas>
+    <div class="morning-garden" aria-hidden="true">
+      <div class="mist-bank mist-bank-rose"></div>
+      <div class="mist-bank mist-bank-lilac"></div>
+      <div class="mist-bank mist-bank-pearl"></div>
+      <div class="background-clearance"></div>
+    </div>
+    <canvas class="background-particles" aria-hidden="true"></canvas>
     <div class="debug-controls" role="group" aria-label="动画调试">
       <button id="debug-start" type="button" disabled>开始动画</button>
       <button id="debug-reset" type="button" disabled>重置</button>
