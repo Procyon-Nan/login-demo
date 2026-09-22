@@ -6,7 +6,8 @@ const TENSION_END = .18; // 第五次先用总时长的 18% 绷紧。
 const TENSION_HOLD = .05; // 极限状态停留 5%（当前约 85ms），再快速释放。
 // 透视焦距与晶片厚度，均使用画布像素；焦距越小，前后大小差异越明显。
 const FOCAL_LENGTH = 980;
-const THICKNESS = 7;
+const THICKNESS = 1.8; // 薄晶片侧面厚度；保留空间感，避免形成宽实的暗边。
+const SIDE_OPACITY = .28;
 const REST_POSE = { x: 0, y: 0, z: 0, pitch: 0, yaw: 0, roll: 0, opacity: 1 };
 const smoothstep = (start, end, value) => {
   const t = Math.max(0, Math.min(1, (value - start) / (end - start)));
@@ -44,31 +45,99 @@ function surface(width, height = width) {
   return canvas;
 }
 
-// 从实际笔画覆盖率提取平滑边界，厚度侧面只沿刻印形状生成。
-function traceEdges(mask) {
+function solidMask(pixels, size) {
+  const mask = surface(size);
+  const context = mask.getContext('2d');
+  const frame = context.createImageData(size, size);
+  for (let i = 0; i < size * size; i++) {
+    frame.data[i * 4 + 3] = Math.min(1, pixels[i * 4 + 1] / 240) * pixels[i * 4 + 3];
+  }
+  context.putImageData(frame, 0, 0);
+  return mask;
+}
+
+// 保留闭合轮廓的转折，删除误差不超过 0.15 个逻辑像素的冗余点。
+// 精细采样仅用于初始化，避免漂浮时重复提交大量近乎共线的短线段。
+function simplifyContour(points) {
+  const keep = new Uint8Array(points.length);
+  keep[0] = 1;
+  const pending = [[0, points.length]];
+  while (pending.length) {
+    const [start, end] = pending.pop();
+    const a = points[start], b = points[end % points.length];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const length = dx * dx + dy * dy;
+    let farthest = -1, distance = .15 ** 2;
+    for (let i = start + 1; i < end; i++) {
+      const p = points[i];
+      const t = length ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / length)) : 0;
+      const error = (p.x - a.x - t * dx) ** 2 + (p.y - a.y - t * dy) ** 2;
+      if (error > distance) { distance = error; farthest = i; }
+    }
+    if (farthest < 0) continue;
+    keep[farthest] = 1;
+    pending.push([start, farthest], [farthest, end]);
+  }
+  return points.filter((_, i) => keep[i]);
+}
+
+// 在高分辨率覆盖率上提取闭合轮廓，坐标仍还原到原来的 640 单位空间。
+function traceContours(mask, scale) {
   const { width, height } = mask;
   const pixels = mask.getContext('2d').getImageData(0, 0, width, height).data;
   const cases = [[], [[0, 3]], [[1, 0]], [[1, 3]], [[2, 1]], [[0, 3], [2, 1]], [[2, 0]], [[2, 3]],
     [[3, 2]], [[0, 2]], [[1, 0], [3, 2]], [[1, 2]], [[3, 1]], [[0, 1]], [[3, 0]], []];
-  const segments = [];
+  const edges = new Map();
   const alpha = (x, y) => pixels[(y * width + x) * 4 + 3] / 255;
-  for (let y = 0; y < height - 2; y += 2) {
-    for (let x = 0; x < width - 2; x += 2) {
-      const corners = [[x, y], [x + 2, y], [x + 2, y + 2], [x, y + 2]];
+  for (let y = 0; y < height - 1; y++) {
+    for (let x = 0; x < width - 1; x++) {
+      const corners = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]];
       const values = corners.map(([px, py]) => alpha(px, py));
       const code = values.reduce((result, value, i) => result | (value > .35 ? 1 << i : 0), 0);
       const edgePoint = edge => {
         const next = (edge + 1) % 4;
         const t = (.35 - values[edge]) / (values[next] - values[edge]);
         return {
-          x: corners[edge][0] + (corners[next][0] - corners[edge][0]) * t,
-          y: corners[edge][1] + (corners[next][1] - corners[edge][1]) * t,
+          // 用采样网格边编号连接相邻单元，避免浮点坐标匹配造成断点。
+          key: edge === 0 ? `h${x},${y}` : edge === 1 ? `v${x + 1},${y}`
+            : edge === 2 ? `h${x},${y + 1}` : `v${x},${y}`,
+          x: (corners[edge][0] + (corners[next][0] - corners[edge][0]) * t + .5) / scale,
+          y: (corners[edge][1] + (corners[next][1] - corners[edge][1]) * t + .5) / scale,
         };
       };
-      for (const [a, b] of cases[code]) segments.push([edgePoint(a), edgePoint(b)]);
+      for (const [a, b] of cases[code]) {
+        const start = edgePoint(a);
+        edges.set(start.key, { start, end: edgePoint(b) });
+      }
     }
   }
-  return segments;
+  const contours = [];
+  while (edges.size) {
+    const first = edges.values().next().value;
+    const points = [];
+    let edge = first;
+    while (edge) {
+      points.push(edge.start);
+      edges.delete(edge.start.key);
+      if (edge.end.key === first.start.key) break;
+      edge = edges.get(edge.end.key);
+    }
+    if (!edge || points.length < 3) continue;
+    // 轻微平滑采样噪声；大于 60° 的转折保留原位，避免磨圆断口和尖角。
+    const smoothed = points.map((point, i) => {
+      const before = points[(i + points.length - 1) % points.length];
+      const after = points[(i + 1) % points.length];
+      const ux = point.x - before.x, uy = point.y - before.y;
+      const vx = after.x - point.x, vy = after.y - point.y;
+      const cosine = (ux * vx + uy * vy) / (Math.hypot(ux, uy) * Math.hypot(vx, vy));
+      return cosine > .5
+        ? { x: point.x * .8 + (before.x + after.x) * .1, y: point.y * .8 + (before.y + after.y) * .1 }
+        : point;
+    });
+    const simplified = simplifyContour(smoothed);
+    if (simplified.length >= 3) contours.push(simplified);
+  }
+  return contours;
 }
 
 // 三轴旋转后的局部坐标基，按晶片中心深度作透视缩放。
@@ -86,7 +155,7 @@ function project(piece, pose, center) {
   return { u, v, normal, scale, a, b, c, d, e: x - a * piece.x - c * piece.y, f: y - b * piece.x - d * piece.y };
 }
 
-export function createSignetFracture(pixels, contour, size, arrivalAt) {
+export function createSignetFracture({ pixels, contour, size, arrivalAt, detailPixels, detailScale }) {
   const patternSeed = Math.random() * 10000;
   let minX = size, minY = size, maxX = 0, maxY = 0;
   for (let i = 0; i < contour.length; i++) {
@@ -121,13 +190,8 @@ export function createSignetFracture(pixels, contour, size, arrivalAt) {
     nearest.arrival += contour[i] * arrivalAt(x, y);
   }
 
-  const core = surface(size);
-  const coreContext = core.getContext('2d');
-  const coreFrame = coreContext.createImageData(size, size);
-  for (let i = 0; i < contour.length; i++) {
-    coreFrame.data[i * 4 + 3] = Math.min(1, pixels[i * 4 + 1] / 240) * pixels[i * 4 + 3];
-  }
-  coreContext.putImageData(coreFrame, 0, 0);
+  const core = solidMask(pixels, size);
+  const detailCore = solidMask(detailPixels, size * detailScale);
 
   for (const site of sites) {
     let polygon = [{ x: 0, y: 0 }, { x: size, y: 0 }, { x: size, y: size }, { x: 0, y: size }];
@@ -144,25 +208,27 @@ export function createSignetFracture(pixels, contour, size, arrivalAt) {
     const top = Math.max(0, Math.floor(Math.min(...polygon.map(point => point.y))) - 2);
     const right = Math.min(size, Math.ceil(Math.max(...polygon.map(point => point.x))) + 2);
     const bottom = Math.min(size, Math.ceil(Math.max(...polygon.map(point => point.y))) + 2);
-    const edge = surface(right - left, bottom - top);
+    const edge = surface((right - left) * detailScale, (bottom - top) * detailScale);
     const edgeContext = edge.getContext('2d');
+    edgeContext.scale(detailScale, detailScale);
     edgeContext.translate(-left, -top);
     edgeContext.strokeStyle = '#fff';
-    edgeContext.lineWidth = 2;
+    edgeContext.lineWidth = 1.2;
     edgeContext.stroke(path);
     edgeContext.globalCompositeOperation = 'destination-in';
-    edgeContext.drawImage(core, 0, 0);
+    edgeContext.drawImage(detailCore, 0, 0, size, size);
     edgeContext.setTransform(1, 0, 0, 1, 0, 0);
     edgeContext.globalCompositeOperation = 'source-over';
-    const mask = surface(right - left, bottom - top);
+    const mask = surface(edge.width, edge.height);
     const maskContext = mask.getContext('2d');
+    maskContext.scale(detailScale, detailScale);
     maskContext.translate(-left, -top);
     maskContext.clip(path);
-    maskContext.drawImage(core, 0, 0);
+    maskContext.drawImage(detailCore, 0, 0, size, size);
     const face = surface(mask.width, mask.height);
     face.getContext('2d').drawImage(mask, 0, 0);
     return {
-      ...site, path, edge, face, sides: traceEdges(mask), left, top, width: right - left, height: bottom - top,
+      ...site, path, edge, face, sides: traceContours(mask, detailScale), left, top, width: right - left, height: bottom - top,
       arrival: site.arrival / site.mass,
       pose: { ...REST_POSE }, flash: 0, chipStage: Infinity,
     };
@@ -254,14 +320,15 @@ export function createSignetFracture(pixels, contour, size, arrivalAt) {
   }
 
   function refreshTheme(flowColor, idleColor) {
-    sideColor = idleColor;
+    // 断面取主题粉紫色的浅透混合色，不再用压暗的轮廓色制造厚重阴影。
+    sideColor = idleColor.map((value, i) => value * .35 + flowColor[i] * .65);
     cracks.refreshTheme(flowColor, idleColor);
     for (const piece of pieces) {
       for (const [surface, color] of [[piece.edge, flowColor], [piece.face, idleColor]]) {
         const context = surface.getContext('2d');
         context.globalCompositeOperation = 'source-in';
         context.fillStyle = `rgb(${color.join(',')})`;
-        context.fillRect(0, 0, piece.width, piece.height);
+        context.fillRect(0, 0, surface.width, surface.height);
         context.globalCompositeOperation = 'source-over';
       }
     }
@@ -275,20 +342,30 @@ export function createSignetFracture(pixels, contour, size, arrivalAt) {
       x: matrix.a * (p.x + piece.left) + matrix.c * (p.y + piece.top) + matrix.e,
       y: matrix.b * (p.x + piece.left) + matrix.d * (p.y + piece.top) + matrix.f,
     });
-    const shade = .58 + Math.max(0, -.5 * matrix.normal.x - .6 * matrix.normal.y + .2) * .35;
+    const shade = .92 + Math.max(0, -.5 * matrix.normal.x - .6 * matrix.normal.y + .2) * .08;
     context.fillStyle = `rgb(${sideColor.map(value => Math.min(255, Math.round(value * shade))).join(',')})`;
-    // 同片可见侧面合并填充，避免逐小段半透明叠加产生锯齿状拼接纹。
+    // 每段连续可见边缘只画一个完整侧面，消除短四边形之间的栅格接缝。
     context.beginPath();
-    for (const [start, end] of piece.sides) {
-      const dx = end.x - start.x, dy = end.y - start.y;
-      const nz = matrix.u.z * dy - matrix.v.z * dx;
-      if (nz <= 0) continue;
-      const a = point(start), b = point(end);
-      context.moveTo(a.x, a.y);
-      context.lineTo(b.x, b.y);
-      context.lineTo(b.x + backX, b.y + backY);
-      context.lineTo(a.x + backX, a.y + backY);
-      context.closePath();
+    for (const contour of piece.sides) {
+      const visible = contour.map((a, i) => {
+        const b = contour[(i + 1) % contour.length];
+        return matrix.u.z * (b.y - a.y) - matrix.v.z * (b.x - a.x) > 0;
+      });
+      const start = visible.indexOf(false);
+      let strip = [];
+      for (let step = 1; step <= contour.length; step++) {
+        const i = (start + step) % contour.length;
+        if (visible[i]) {
+          if (!strip.length) strip.push(point(contour[i]));
+          strip.push(point(contour[(i + 1) % contour.length]));
+        } else if (strip.length) {
+          context.moveTo(strip[0].x, strip[0].y);
+          for (let j = 1; j < strip.length; j++) context.lineTo(strip[j].x, strip[j].y);
+          for (let j = strip.length - 1; j >= 0; j--) context.lineTo(strip[j].x + backX, strip[j].y + backY);
+          context.closePath();
+          strip = [];
+        }
+      }
     }
     context.fill();
   }
@@ -335,15 +412,16 @@ export function createSignetFracture(pixels, contour, size, arrivalAt) {
       const light = Math.max(0, -.4 * matrix.normal.x - .5 * matrix.normal.y + .75 * matrix.normal.z);
       const volume = level === 5 && piece.chipStage === Infinity ? release : 1;
       context.save();
-      context.globalAlpha = pose.opacity * transfer * remaining * volume * .85;
+      context.globalAlpha = pose.opacity * transfer * remaining * volume * SIDE_OPACITY;
       drawSides(context, piece, matrix, remaining * volume);
       context.restore();
       for (const [target, image] of [[context, artwork], [glowContext, cracked.glow]]) {
         target.save();
         target.transform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
         if (target === context) {
-          target.globalAlpha = pose.opacity * transfer * remaining * volume * (.07 + light * .10);
-          target.drawImage(piece.face, piece.left, piece.top);
+          // 晶面只留低覆盖率的色泽与朝向反光，让背景透过碎片。
+          target.globalAlpha = pose.opacity * transfer * remaining * volume * (.02 + light * .04);
+          target.drawImage(piece.face, piece.left, piece.top, piece.width, piece.height);
         }
         target.globalAlpha = pose.opacity * transfer;
         target.save();
@@ -354,7 +432,7 @@ export function createSignetFracture(pixels, contour, size, arrivalAt) {
         const rim = flash + remaining * volume * (.10 + Math.pow(light, 6) * .32);
         if (rim > .001) {
           target.globalAlpha = pose.opacity * transfer * Math.min(1, rim);
-          target.drawImage(piece.edge, piece.left, piece.top);
+          target.drawImage(piece.edge, piece.left, piece.top, piece.width, piece.height);
         }
         target.restore();
       }

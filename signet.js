@@ -3,6 +3,9 @@ import { createSignetFracture } from './signet-fracture.js';
 // 在原图内部计算连续到达时间场；渲染阶段只改变同一批像素的充盈度。
 const FIELD_SIZE = 192;
 const RENDER_SIZE = 640;
+// 碎片轮廓、晶面及断口亮边使用 2 倍采样，再由 Canvas 平滑缩绘。
+// 主画布和动画坐标保持原尺寸，避免持续漂浮的输出开销随采样倍率增长。
+const DETAIL_SCALE = 2;
 // 对应 CSS 的 17.5% 外扩，让原图自带的泛光完整落在画布内。
 const ART_PADDING = 112;
 const ART_SIZE = 640 + ART_PADDING * 2;
@@ -24,10 +27,11 @@ async function loadImage(url) {
   return image;
 }
 
-function sampleImage(image, size) {
+function sampleImage(image, size, smoothingQuality = 'low') {
   const surface = document.createElement('canvas');
   surface.width = surface.height = size;
   const context = surface.getContext('2d', { willReadFrequently: true });
+  context.imageSmoothingQuality = smoothingQuality;
   const scale = size / ART_SIZE;
   // 用实心区域定位，但绘制整张原图，保留外围泛光的 RGB 和透明度。
   const sx = 615 / 2744;
@@ -229,8 +233,12 @@ export async function createSignet(canvas, idleGlowCanvas) {
   const nativeGlowContext = nativeGlowSource.getContext('2d');
   const materialFrame = materialContext.createImageData(RENDER_SIZE, RENDER_SIZE);
   const nativeGlowFrame = nativeGlowContext.createImageData(RENDER_SIZE, RENDER_SIZE);
-  const fracture = createSignetFracture(fillPixels, contour, RENDER_SIZE, (x, y) =>
-    interpolate(field, x / (RENDER_SIZE - 1) * (FIELD_SIZE - 1), y / (RENDER_SIZE - 1) * (FIELD_SIZE - 1)));
+  const fracture = createSignetFracture({
+    pixels: fillPixels, contour, size: RENDER_SIZE,
+    detailPixels: sampleImage(solid, RENDER_SIZE * DETAIL_SCALE, 'high'), detailScale: DETAIL_SCALE,
+    arrivalAt: (x, y) => interpolate(field, x / (RENDER_SIZE - 1) * (FIELD_SIZE - 1),
+      y / (RENDER_SIZE - 1) * (FIELD_SIZE - 1)),
+  });
   const active = [];
   for (let i = 0; i < RENDER_SIZE * RENDER_SIZE; i++) {
     const core = solidAlpha(fillPixels, i * 4);
