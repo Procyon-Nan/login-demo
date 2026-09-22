@@ -13,6 +13,8 @@ const routes = new Map([
   ['/login.js', ['login.js', 'text/javascript']],
   ['/token-input.js', ['token-input.js', 'text/javascript']],
   ['/signet.js', ['signet.js', 'text/javascript']],
+  ['/signet-fracture.js', ['signet-fracture.js', 'text/javascript']],
+  ['/signet-cracks.js', ['signet-cracks.js', 'text/javascript']],
   ['/fireflies.js', ['fireflies.js', 'text/javascript']],
   ['/assets/images/elysia-signet.png', ['assets/images/elysia-signet.png', 'image/png']],
   ['/assets/images/elysia-signet-solid.png', ['assets/images/elysia-signet-solid.png', 'image/png']],

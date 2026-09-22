@@ -95,19 +95,21 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
 .signet-art, .signet-idle-glow { position: absolute; inset: -17.5%; width: 135%; height: 135%; }
 .signet-idle-glow { opacity: 0; filter: blur(1.5px) drop-shadow(0 0 4px var(--signet-idle)); }
 [data-phase="loading"] .signet { opacity: 0; }
-.login-scene:is([data-phase="shifting"], [data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"], [data-phase="closing"]) .signet { translate: 0 0; }
-.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"], [data-phase="closing"]) .terminal { visibility: visible; }
-.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"]) .origin { animation: origin 400ms ease both; }
-.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"]) .frame { animation: unfold-diagonal 450ms cubic-bezier(.22, .7, .25, 1) 120ms both; }
-.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"]) :is(.frame-ridge, .frame-detail) { animation: frame-trace 500ms cubic-bezier(.25, .6, .3, 1) 260ms both; }
+.login-scene:is([data-phase="shifting"], [data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"], [data-phase="exhausted"], [data-phase="closing"]) .signet { translate: 0 0; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"], [data-phase="exhausted"], [data-phase="closing"]) .terminal { visibility: visible; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"], [data-phase="exhausted"]) .origin { animation: origin 400ms ease both; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"], [data-phase="exhausted"]) .frame { animation: unfold-diagonal 450ms cubic-bezier(.22, .7, .25, 1) 120ms both; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"], [data-phase="exhausted"]) :is(.frame-ridge, .frame-detail) { animation: frame-trace 500ms cubic-bezier(.25, .6, .3, 1) 260ms both; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"], [data-phase="exhausted"]) .failure-meter { animation: meter-unfold 450ms cubic-bezier(.22, .7, .25, 1) 120ms both; }
 .login-scene:is([data-phase="opening"], [data-phase="ready"]) .input-line { animation: reveal 240ms ease 660ms both; }
-.login-scene:is([data-phase="welcoming"], [data-phase="closing"]) .input-line { animation: input-hide 100ms ease both; }
-.login-scene:is([data-phase="welcoming"], [data-phase="closing"]) .terminal-welcome { visibility: visible; }
+.login-scene:is([data-phase="welcoming"], [data-phase="exhausted"], [data-phase="closing"]) .input-line { animation: input-hide 100ms ease both; }
+.login-scene:is([data-phase="welcoming"], [data-phase="exhausted"], [data-phase="closing"]) .terminal-welcome { visibility: visible; }
 /* 先用约 500ms 展开文字，再完整停留约 600ms，等待结束后才收起输入框。 */
-[data-phase="welcoming"] .terminal-welcome span { animation: welcome-reveal 1100ms ease 100ms both; }
+.login-scene:is([data-phase="welcoming"], [data-phase="exhausted"]) .terminal-welcome span { animation: welcome-reveal 1100ms ease 100ms both; }
 [data-phase="closing"] .terminal-welcome span { animation: welcome-fold 310ms cubic-bezier(.45, 0, .3, 1) 50ms both; }
 [data-phase="closing"] :is(.frame-ridge, .frame-detail) { animation: frame-trace 230ms ease-in reverse both; }
 [data-phase="closing"] .frame { animation: fold-diagonal 310ms cubic-bezier(.45, 0, .3, 1) 50ms both; }
+[data-phase="closing"] .failure-meter { animation: meter-fold 310ms cubic-bezier(.45, 0, .3, 1) 50ms both; }
 .terminal {
   position: relative;
   width: min(100%, 480px);
@@ -153,6 +155,27 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
   filter: drop-shadow(0 0 4px var(--edge-glow));
 }
 .terminal:focus-within .frame-detail { stroke: var(--focus); }
+/* 整层以输入框中心缩放，让左下方的五格与边框同步展开、收起。 */
+.failure-meter { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.failure-segments {
+  position: absolute;
+  left: 28px;
+  bottom: -10px;
+  display: grid;
+  grid-template-columns: repeat(5, 12px);
+  gap: 4px;
+  height: 4px;
+}
+.failure-segments > span {
+  border: 1px solid color-mix(in srgb, var(--control) 32%, transparent);
+  background: color-mix(in srgb, var(--control) 5%, transparent);
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.failure-segments > .is-lit {
+  border-color: var(--control);
+  background: var(--control);
+  box-shadow: 0 0 6px var(--core-glow);
+}
 .input-line {
   position: relative;
   display: flex;
@@ -176,6 +199,16 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
   text-indent: .28em;
   white-space: nowrap;
   text-shadow: 0 0 10px var(--edge-glow);
+}
+[data-phase="exhausted"] .terminal-welcome {
+  padding: 0 24px;
+  font-size: 13px;
+  line-height: 1.8;
+  letter-spacing: .05em;
+  text-indent: .05em;
+  white-space: normal;
+  text-align: center;
+  text-wrap: balance;
 }
 #token, .token-measure {
   font: inherit;
@@ -314,6 +347,14 @@ noscript { color: var(--muted); font-size: 12px; }
   85% { opacity: 1; }
   to { transform: translate(var(--from-x), var(--from-y)); opacity: 0; }
 }
+@keyframes meter-unfold {
+  from { opacity: 0; transform: scale(0); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes meter-fold {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0); }
+}
 @keyframes caret-blink {
   0%, 35%, 100% { opacity: 1; }
   55%, 80% { opacity: 0; }
@@ -361,6 +402,8 @@ noscript { color: var(--muted); font-size: 12px; }
   .debug-controls { top: 16px; left: 16px; gap: 4px; }
   .terminal { height: 72px; }
   .input-line { padding: 0 12px; }
+  .failure-segments { left: 12px; grid-template-columns: repeat(5, 10px); gap: 3px; }
+  [data-phase="exhausted"] .terminal-welcome { padding: 0 12px; font-size: 12px; letter-spacing: 0; text-indent: 0; }
   #token::placeholder { font-size: 12px; letter-spacing: 0; }
   .signature { bottom: max(18px, env(safe-area-inset-bottom)); gap: 12px; }
   .signature-wordmark { flex-basis: 170px; width: 170px; height: 62px; }

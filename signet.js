@@ -1,3 +1,5 @@
+import { createSignetFracture } from './signet-fracture.js';
+
 // 在原图内部计算连续到达时间场；渲染阶段只改变同一批像素的充盈度。
 const FIELD_SIZE = 192;
 const RENDER_SIZE = 640;
@@ -6,7 +8,10 @@ const ART_PADDING = 112;
 const ART_SIZE = 640 + ART_PADDING * 2;
 // 点亮时长，单位毫秒：数值越小越快，例如 1500 = 1.5 秒。
 // 仅控制笔画充盈与原生泛光，不含输入框收起、刻印归中和向最亮状态上升的时间。
-const LIGHT_DURATION = 1800;
+const LIGHT_DURATION = 2000;
+// 前四次裂痕生长、第五次绷紧并解体的时长，单位毫秒。
+const FRACTURE_DURATION = 1200;
+const SHATTER_DURATION = 1700;
 const smoothstep = (start, end, value) => {
   const t = Math.max(0, Math.min(1, (value - start) / (end - start)));
   return t * t * (3 - 2 * t);
@@ -213,6 +218,19 @@ export async function createSignet(canvas, idleGlowCanvas) {
   canvas.width = canvas.height = RENDER_SIZE;
   const context = canvas.getContext('2d');
   const frame = context.createImageData(RENDER_SIZE, RENDER_SIZE);
+  const source = document.createElement('canvas');
+  const glowSource = document.createElement('canvas');
+  const materialSource = document.createElement('canvas');
+  const nativeGlowSource = document.createElement('canvas');
+  for (const surface of [source, glowSource, materialSource, nativeGlowSource]) surface.width = surface.height = RENDER_SIZE;
+  const sourceContext = source.getContext('2d');
+  const glowSourceContext = glowSource.getContext('2d');
+  const materialContext = materialSource.getContext('2d');
+  const nativeGlowContext = nativeGlowSource.getContext('2d');
+  const materialFrame = materialContext.createImageData(RENDER_SIZE, RENDER_SIZE);
+  const nativeGlowFrame = nativeGlowContext.createImageData(RENDER_SIZE, RENDER_SIZE);
+  const fracture = createSignetFracture(fillPixels, contour, RENDER_SIZE, (x, y) =>
+    interpolate(field, x / (RENDER_SIZE - 1) * (FIELD_SIZE - 1), y / (RENDER_SIZE - 1) * (FIELD_SIZE - 1)));
   const active = [];
   for (let i = 0; i < RENDER_SIZE * RENDER_SIZE; i++) {
     const core = solidAlpha(fillPixels, i * 4);
@@ -230,9 +248,18 @@ export async function createSignet(canvas, idleGlowCanvas) {
   }
   let progress = 0;
   let request = 0;
+  let driftRequest = 0;
+  let driftTime = 0;
+  let drifting = false;
+  let motionPreference;
+  let animationId = 0;
   let finish = null;
   let idleColor;
   let flowColor;
+
+  function compose() {
+    fracture.draw(source, glowSource, context, idleGlowContext, progress, materialSource, nativeGlowSource);
+  }
 
   function draw(value) {
     progress = value;
@@ -249,25 +276,37 @@ export async function createSignet(canvas, idleGlowCanvas) {
       const fillAlpha = pixel.core * charge + pixel.glow * glowCharge;
       const lineAlpha = pixel.line * .65 * (1 - charge) * (1 - fillAlpha);
       const alpha = fillAlpha + lineAlpha;
+      const materialAlpha = pixel.core * charge + lineAlpha;
       const offset = pixel.offset;
       for (let channel = 0; channel < 3; channel++) {
         // 泛光始终沿用原图颜色；笔画流动色最终连续回到各像素原始 RGB。
         const lit = pixel.color[channel] + (flowColor[channel] - pixel.color[channel])
           * (1 - settledColor) * pixel.coreWeight;
         data[offset + channel] = alpha ? (lit * fillAlpha + idleColor[channel] * lineAlpha) / alpha : 0;
+        materialFrame.data[offset + channel] = materialAlpha
+          ? (lit * pixel.core * charge + idleColor[channel] * lineAlpha) / materialAlpha : 0;
+        nativeGlowFrame.data[offset + channel] = lit;
       }
       data[offset + 3] = alpha * 255;
+      materialFrame.data[offset + 3] = materialAlpha * 255;
+      // 将柔光作为连续底层，反解 source-over 的透明度；晶片只携带笔画及轮廓。
+      nativeGlowFrame.data[offset + 3] = materialAlpha < 1
+        ? pixel.glow * glowCharge / (1 - materialAlpha) * 255 : 0;
       // 未充盈处继续保留峰值轮廓柔光，随笔画稳定逐点交给素材原生泛光。
       idleGlowFrame.data[offset + 3] = pixel.line * (1 - settled) * 255;
     }
-    context.putImageData(frame, 0, 0);
-    idleGlowContext.putImageData(idleGlowFrame, 0, 0);
+    sourceContext.putImageData(frame, 0, 0);
+    glowSourceContext.putImageData(idleGlowFrame, 0, 0);
+    materialContext.putImageData(materialFrame, 0, 0);
+    nativeGlowContext.putImageData(nativeGlowFrame, 0, 0);
+    compose();
   }
   function refreshTheme() {
     const style = getComputedStyle(document.documentElement);
     const color = name => style.getPropertyValue(name).trim().slice(1).match(/../g).map(value => parseInt(value, 16));
     idleColor = color('--signet-idle');
     flowColor = color('--signet-flow');
+    fracture.refreshTheme(flowColor, idleColor);
     // 主题只更新柔光颜色；覆盖率由 draw 与笔画充盈同步计算。
     for (let i = 0; i < contour.length; i++) {
       idleGlowFrame.data[i * 4] = idleColor[0];
@@ -277,18 +316,41 @@ export async function createSignet(canvas, idleGlowCanvas) {
     draw(progress);
   }
   function cancel() {
+    animationId += 1;
     cancelAnimationFrame(request);
+    cancelAnimationFrame(driftRequest);
+    driftRequest = 0;
+    drifting = false;
     if (finish) finish(false);
     finish = null;
   }
+  // 碎片待机只合成缓存纹理；后台或减少动态效果时暂停，恢复时不跳过漂移。
+  function syncMotion() {
+    if (!drifting) return;
+    if (document.hidden || motionPreference.matches) {
+      cancelAnimationFrame(driftRequest);
+      driftRequest = 0;
+      return;
+    }
+    if (driftRequest) return;
+    let previous = performance.now();
+    function tick(now) {
+      driftTime += Math.min(48, now - previous);
+      previous = now;
+      fracture.drift(driftTime);
+      compose();
+      driftRequest = requestAnimationFrame(tick);
+    }
+    driftRequest = requestAnimationFrame(tick);
+  }
   function reset() {
     cancel();
+    fracture.reset();
     draw(0);
   }
-  function play(reducedMotion) {
-    cancel();
-    const startProgress = progress;
-    if (reducedMotion.matches) { draw(1); return Promise.resolve(true); }
+  // 点亮与破碎共用一个动画任务，取消后保留当前画面，可从任意裂损状态接续。
+  function animate(duration, reducedMotion, render) {
+    if (reducedMotion.matches) { render(1); return Promise.resolve(true); }
     return new Promise(resolve => {
       finish = resolve;
       let previous = performance.now();
@@ -297,16 +359,37 @@ export async function createSignet(canvas, idleGlowCanvas) {
         // 标签页恢复时不跳过整段点亮；最后一帧确实绘制后才完成 Promise。
         elapsed += Math.min(48, now - previous);
         previous = now;
-        const time = Math.min(1, elapsed / LIGHT_DURATION);
-        // 初段直接推进，末段减速至零，避免与逐像素充盈的缓起叠加成停顿。
-        const eased = time * (2 - time);
-        draw(reducedMotion.matches ? 1 : startProgress + (1 - startProgress) * eased);
+        const time = Math.min(1, elapsed / duration);
+        render(reducedMotion.matches ? 1 : time);
         if (time < 1 && !reducedMotion.matches) request = requestAnimationFrame(tick);
         else { finish = null; resolve(true); }
       }
       request = requestAnimationFrame(tick);
     });
   }
+  function play(reducedMotion) {
+    cancel();
+    const startProgress = progress;
+    return animate(LIGHT_DURATION, reducedMotion, time => {
+      // 光流推进的同时，各晶片按自己的到达时间归位、闭合断口。
+      draw(startProgress + (1 - startProgress) * time * (2 - time));
+    });
+  }
+  async function breakApart(level, reducedMotion) {
+    cancel();
+    const run = animationId;
+    fracture.begin(level);
+    const completed = await animate(level === 5 ? SHATTER_DURATION : FRACTURE_DURATION, reducedMotion, time => {
+      fracture.update(time);
+      compose();
+    });
+    if (!completed || run !== animationId) return false;
+    motionPreference = reducedMotion;
+    driftTime = 0;
+    drifting = fracture.hasFloatingPieces();
+    syncMotion();
+    return true;
+  }
   refreshTheme();
-  return { play, reset, refreshTheme };
+  return { play, breakApart, reset, refreshTheme, syncMotion };
 }

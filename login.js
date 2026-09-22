@@ -7,6 +7,8 @@ const input = document.querySelector('#token');
 const status = form.querySelector('.terminal-status');
 const welcome = form.querySelector('.terminal-welcome');
 const welcomeText = welcome.querySelector('span');
+const failureMeter = form.querySelector('.failure-meter');
+const failureSegments = failureMeter.querySelectorAll('.failure-segments > span');
 const signetElement = document.querySelector('.signet');
 const scene = document.querySelector('.login-scene');
 const signature = document.querySelector('.signature');
@@ -23,18 +25,21 @@ const themeToggle = document.querySelector('.theme-toggle');
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 let themeManuallySelected = false;
 const DEMO_KEY = '123'; // 本地演示密钥，仅在前端比较。
+const MAX_FAILURES = 5; // 本轮最多允许的错误提交次数，重置页面后清零。
 const IDLE_PERIOD = 5500;
 let idleAnimations = [];
 let inputShake;
+let failedAttempts = 0;
 let flowId = 0;
 debugReset.disabled = false;
 
 function syncSignetMotion() {
   for (const animation of idleAnimations) {
     if (animation.playState === 'finished') continue;
-    if (document.hidden) animation.pause();
+    if (document.hidden || scene.classList.contains('is-locked')) animation.pause();
     else animation.play();
   }
+  signet?.syncMotion();
 }
 
 function stopIdleMotion() {
@@ -83,10 +88,12 @@ function riseToIdlePeak() {
 reducedMotion.addEventListener('change', () => {
   if (reducedMotion.matches) inputShake?.cancel();
   if (!signet) return;
+  signet.syncMotion();
   if (scene.matches('.is-awakening, .is-lit')) {
     // 登录途中切换为减少动态效果，直接完成有限的上升，不重新启动循环。
     if (reducedMotion.matches) idleAnimations.forEach(animation => animation.finish());
-  } else startIdleMotion();
+  } else if (!scene.classList.contains('is-locked')) startIdleMotion();
+  else if (reducedMotion.matches) stopIdleMotion();
 });
 
 document.addEventListener('visibilitychange', syncSignetMotion);
@@ -129,6 +136,12 @@ function shakeInput() {
   );
 }
 
+function updateFailureMeter() {
+  failureMeter.setAttribute('aria-valuenow', failedAttempts);
+  failureMeter.setAttribute('aria-valuetext', `已输错 ${failedAttempts} 次，最多 ${MAX_FAILURES} 次`);
+  failureSegments.forEach((segment, index) => segment.classList.toggle('is-lit', index < failedAttempts));
+}
+
 // 每段等待实际动画结束；流程编号阻止重置前的异步任务继续点亮或跳转。
 async function runPhase(phase, element, run, subtree = false) {
   if (run !== flowId) return false;
@@ -140,6 +153,9 @@ async function runPhase(phase, element, run, subtree = false) {
 
 async function enterLogin() {
   const run = ++flowId;
+  failedAttempts = 0;
+  updateFailureMeter();
+  scene.classList.remove('is-locked');
   inputShake?.cancel();
   fireflies.reset();
   tokenInput.reset();
@@ -170,9 +186,26 @@ createSignet(signetCanvas, signetIdleGlow).then(renderer => {
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
-  if (input.disabled) return;
+  if (input.disabled || failedAttempts >= MAX_FAILURES) return;
   if (input.value !== DEMO_KEY) {
     shakeInput();
+    const run = flowId;
+    const exhausted = ++failedAttempts === MAX_FAILURES;
+    updateFailureMeter();
+    if (exhausted) {
+      scene.classList.add('is-locked');
+      input.disabled = true;
+      input.blur();
+      tokenInput.reset();
+      debugStart.disabled = true;
+    }
+    if (await signet.breakApart(failedAttempts, reducedMotion) && exhausted && run === flowId) {
+      // 保留当前整体位置与柔光，后续由每块晶片独立漂浮，不突然回落。
+      idleAnimations.forEach(animation => animation.pause());
+      input.value = '';
+      welcomeText.textContent = '错误次数过多，请稍后刷新重试';
+      scene.dataset.phase = 'exhausted';
+    }
     return;
   }
   await playSignet(false);
@@ -248,6 +281,11 @@ debugReset.addEventListener('click', () => window.location.reload());
 
 input.addEventListener('input', () => {
   status.textContent = '';
+});
+
+// 长按回车只算一次提交；动画中仍可修改输入或再次主动提交。
+input.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' && event.repeat) event.preventDefault();
 });
 
 window.addEventListener('pageshow', (event) => {
