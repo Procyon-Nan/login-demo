@@ -78,7 +78,7 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
      并把这里的总宽改为 980px（400 + 最大间距 100 + 480）；窄屏自动缩小。 */
   width: min(100%, 950px);
   display: grid;
-  grid-template-columns: minmax(0, 400fr) minmax(0, 480fr);
+  grid-template-columns: minmax(0, 500fr) minmax(0, 480fr);
   align-items: center;
   gap: var(--scene-gap);
 }
@@ -95,13 +95,17 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
 .signet-art, .signet-idle-glow { position: absolute; inset: -17.5%; width: 135%; height: 135%; }
 .signet-idle-glow { opacity: 0; filter: blur(1.5px) drop-shadow(0 0 4px var(--signet-idle)); }
 [data-phase="loading"] .signet { opacity: 0; }
-.login-scene:is([data-phase="shifting"], [data-phase="opening"], [data-phase="ready"], [data-phase="closing"]) .signet { translate: 0 0; }
-.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="closing"]) .terminal { visibility: visible; }
-.login-scene:is([data-phase="opening"], [data-phase="ready"]) .origin { animation: origin 400ms ease both; }
-.login-scene:is([data-phase="opening"], [data-phase="ready"]) .frame { animation: unfold-diagonal 450ms cubic-bezier(.22, .7, .25, 1) 120ms both; }
-.login-scene:is([data-phase="opening"], [data-phase="ready"]) :is(.frame-ridge, .frame-detail) { animation: frame-trace 500ms cubic-bezier(.25, .6, .3, 1) 260ms both; }
+.login-scene:is([data-phase="shifting"], [data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"], [data-phase="closing"]) .signet { translate: 0 0; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"], [data-phase="closing"]) .terminal { visibility: visible; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"]) .origin { animation: origin 400ms ease both; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"]) .frame { animation: unfold-diagonal 450ms cubic-bezier(.22, .7, .25, 1) 120ms both; }
+.login-scene:is([data-phase="opening"], [data-phase="ready"], [data-phase="welcoming"]) :is(.frame-ridge, .frame-detail) { animation: frame-trace 500ms cubic-bezier(.25, .6, .3, 1) 260ms both; }
 .login-scene:is([data-phase="opening"], [data-phase="ready"]) .input-line { animation: reveal 240ms ease 660ms both; }
-[data-phase="closing"] .input-line { animation: input-hide 100ms ease both; }
+.login-scene:is([data-phase="welcoming"], [data-phase="closing"]) .input-line { animation: input-hide 100ms ease both; }
+.login-scene:is([data-phase="welcoming"], [data-phase="closing"]) .terminal-welcome { visibility: visible; }
+/* 先用约 500ms 展开文字，再完整停留约 600ms，等待结束后才收起输入框。 */
+[data-phase="welcoming"] .terminal-welcome span { animation: welcome-reveal 1100ms ease 100ms both; }
+[data-phase="closing"] .terminal-welcome span { animation: welcome-fold 310ms cubic-bezier(.45, 0, .3, 1) 50ms both; }
 [data-phase="closing"] :is(.frame-ridge, .frame-detail) { animation: frame-trace 230ms ease-in reverse both; }
 [data-phase="closing"] .frame { animation: fold-diagonal 310ms cubic-bezier(.45, 0, .3, 1) 50ms both; }
 .terminal {
@@ -158,6 +162,21 @@ main { position: relative; min-height: 100svh; display: grid; place-items: cente
   opacity: 0;
 }
 .token-field { position: relative; flex: 1; min-width: 0; }
+.terminal-welcome {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  visibility: hidden;
+  pointer-events: none;
+  color: var(--control);
+  font-size: 16px;
+  letter-spacing: .28em;
+  text-indent: .28em;
+  white-space: nowrap;
+  text-shadow: 0 0 10px var(--edge-glow);
+}
 #token, .token-measure {
   font: inherit;
   font-size: 16px;
@@ -303,6 +322,18 @@ noscript { color: var(--muted); font-size: 12px; }
   from { opacity: 1; }
   to { opacity: 0; }
 }
+@keyframes welcome-reveal {
+  0% { opacity: 0; clip-path: inset(0 50%); transform: scaleX(.85); }
+  45%, 100% { opacity: 1; clip-path: inset(0); transform: scaleX(1); }
+}
+@keyframes welcome-fold {
+  0% { opacity: 1; clip-path: inset(0); transform: scaleX(1); }
+  65% { opacity: 1; }
+  100% { opacity: 0; clip-path: inset(0 50%); transform: scaleX(.85); }
+}
+@keyframes welcome-still {
+  from, to { opacity: 1; clip-path: inset(0); transform: none; }
+}
 @keyframes frame-trace {
   from { stroke-dashoffset: 1; }
   to { stroke-dashoffset: 0; }
@@ -337,4 +368,6 @@ noscript { color: var(--muted); font-size: 12px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 0ms !important; }
   .token-caret { animation: none !important; }
+  /* 无位移动画，但仍留出阅读成功提示的时间。 */
+  [data-phase="welcoming"] .terminal-welcome span { animation: welcome-still 650ms linear both !important; }
 }

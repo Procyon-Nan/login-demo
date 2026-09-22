@@ -5,6 +5,8 @@ import { createTokenInput } from './token-input.js';
 const form = document.querySelector('.terminal');
 const input = document.querySelector('#token');
 const status = form.querySelector('.terminal-status');
+const welcome = form.querySelector('.terminal-welcome');
+const welcomeText = welcome.querySelector('span');
 const signetElement = document.querySelector('.signet');
 const scene = document.querySelector('.login-scene');
 const signature = document.querySelector('.signature');
@@ -20,8 +22,10 @@ const fireflies = createFireflies(document.querySelector('.fireflies'), reducedM
 const themeToggle = document.querySelector('.theme-toggle');
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 let themeManuallySelected = false;
+const DEMO_KEY = '123'; // 本地演示密钥，仅在前端比较。
 const IDLE_PERIOD = 5500;
 let idleAnimations = [];
+let inputShake;
 let flowId = 0;
 debugReset.disabled = false;
 
@@ -77,6 +81,7 @@ function riseToIdlePeak() {
 }
 
 reducedMotion.addEventListener('change', () => {
+  if (reducedMotion.matches) inputShake?.cancel();
   if (!signet) return;
   if (scene.matches('.is-awakening, .is-lit')) {
     // 登录途中切换为减少动态效果，直接完成有限的上升，不重新启动循环。
@@ -111,6 +116,19 @@ function enableInput() {
   tokenInput.start();
 }
 
+function shakeInput() {
+  inputShake?.cancel();
+  if (reducedMotion.matches) return;
+  // 整个输入框左右衰减抖动：位移单位为 px，总时长为 ms。
+  inputShake = form.animate(
+    [0, -8, 7, -5, 3, -1, 0].map(x => ({
+      transform: `translateX(${x}px)`,
+      easing: 'ease-in-out',
+    })),
+    { duration: 420 },
+  );
+}
+
 // 每段等待实际动画结束；流程编号阻止重置前的异步任务继续点亮或跳转。
 async function runPhase(phase, element, run, subtree = false) {
   if (run !== flowId) return false;
@@ -122,8 +140,10 @@ async function runPhase(phase, element, run, subtree = false) {
 
 async function enterLogin() {
   const run = ++flowId;
+  inputShake?.cancel();
   fireflies.reset();
   tokenInput.reset();
+  welcomeText.textContent = '';
   input.disabled = true;
   debugStart.disabled = true;
   startIdleMotion();
@@ -151,17 +171,16 @@ createSignet(signetCanvas, signetIdleGlow).then(renderer => {
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   if (input.disabled) return;
-  if (!input.value.trim()) {
-    status.textContent = '请输入登陆密钥';
-    input.focus();
+  if (input.value !== DEMO_KEY) {
+    shakeInput();
     return;
   }
-
   await playSignet(false);
 });
 
 async function playSignet(preview) {
   if (debugStart.disabled) return;
+  inputShake?.cancel();
   const run = ++flowId;
   // 重播从未亮状态开始；正常登录直接承接当前轮廓及柔光。
   const replay = scene.dataset.phase === 'lit';
@@ -171,7 +190,7 @@ async function playSignet(preview) {
   }
   scene.classList.remove('is-lit');
   const peakReady = riseToIdlePeak();
-  // 上升与输入框收起、刻印归中同时进行，二者完成后再点亮。
+  // 上升与欢迎文字、输入框收起及刻印归中并行，全部完成后再点亮。
   input.value = '';
   input.blur();
   input.disabled = true;
@@ -181,6 +200,8 @@ async function playSignet(preview) {
   status.textContent = '';
   scene.classList.add('is-awakening');
   if (!replay) {
+    welcomeText.textContent = '欢迎回来';
+    if (!await runPhase('welcoming', welcome, run, true)) return;
     if (!await runPhase('closing', form, run, true)) return;
     if (!await runPhase('centering', signetElement, run)) return;
   }
