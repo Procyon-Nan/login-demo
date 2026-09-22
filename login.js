@@ -1,4 +1,5 @@
 import { createSignet } from './signet.js';
+import { createFireflies } from './fireflies.js';
 
 const form = document.querySelector('.terminal');
 const input = document.querySelector('#token');
@@ -14,6 +15,7 @@ const debugStart = document.querySelector('#debug-start');
 const debugReset = document.querySelector('#debug-reset');
 let signet;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const fireflies = createFireflies(document.querySelector('.fireflies'), reducedMotion, [signetElement, form, signature]);
 const themeToggle = document.querySelector('.theme-toggle');
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 let themeManuallySelected = false;
@@ -89,6 +91,7 @@ function setTheme(dark) {
   themeToggle.setAttribute('aria-label', label);
   themeToggle.title = label;
   signet?.refreshTheme();
+  fireflies.refreshTheme();
 }
 
 setTheme(systemTheme.matches);
@@ -122,6 +125,7 @@ async function runPhase(phase, element, run, subtree = false) {
 
 async function enterLogin() {
   const run = ++flowId;
+  fireflies.reset();
   input.disabled = true;
   submit.disabled = true;
   debugStart.disabled = true;
@@ -133,6 +137,7 @@ async function enterLogin() {
   if (!await runPhase('shifting', signetElement, run)) return;
   if (!await runPhase('opening', form, run, true)) return;
   scene.dataset.phase = 'ready';
+  fireflies.start();
   enableInput();
 }
 

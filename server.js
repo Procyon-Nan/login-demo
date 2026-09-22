@@ -12,6 +12,7 @@ const routes = new Map([
   ['/styles.css', ['styles.css', 'text/css']],
   ['/login.js', ['login.js', 'text/javascript']],
   ['/signet.js', ['signet.js', 'text/javascript']],
+  ['/fireflies.js', ['fireflies.js', 'text/javascript']],
   ['/assets/images/elysia-signet.png', ['assets/images/elysia-signet.png', 'image/png']],
   ['/assets/images/elysia-signet-solid.png', ['assets/images/elysia-signet-solid.png', 'image/png']],
 ]);
