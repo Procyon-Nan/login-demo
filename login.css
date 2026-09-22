@@ -52,83 +52,16 @@ body {
     radial-gradient(ellipse at 75% 70%, var(--violet-haze), transparent 55%),
     radial-gradient(ellipse at 27% 24%, var(--ice-haze), transparent 42%);
 }
-/* 背景只作装饰，中央留白；运动仅使用小幅位移，不循环闪烁。 */
-.ambient { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
-.flower-sea, .star-sea { position: absolute; inset: 0; transition: opacity 1.2s ease; }
-.flower-sea { opacity: 1; }
-.star-sea { opacity: 0; }
-[data-theme="dark"] .flower-sea { opacity: 0; }
-[data-theme="dark"] .star-sea { opacity: 1; }
-.flower-haze {
-  position: absolute;
-  inset: 55% -5% -15%;
-  background:
-    radial-gradient(ellipse at 12% 80%, #f1b8d83b, transparent 50%),
-    radial-gradient(ellipse at 89% 90%, #b8a2e82b, transparent 48%);
-}
-.flowers { position: absolute; bottom: 0; width: 100%; height: min(46svh, 420px); }
-.flower-bed { transform-box: fill-box; transform-origin: 50% 100%; animation: flower-sway 19s ease-in-out infinite alternate; }
-.flower-bed-far { filter: blur(1.2px); animation-duration: 27s; animation-delay: -12s; }
-.flower-bed-left { animation-delay: -6s; }
-.flower-bed-right { animation-duration: 23s; animation-delay: -17s; }
-.drifting-petal {
-  position: absolute;
-  width: 12px;
-  height: 7px;
-  border-radius: 85% 15% 75% 25%;
-  background: linear-gradient(135deg, #f1b8d860, #b8a2e82b);
-  animation: petal-drift 28s ease-in-out infinite alternate;
-}
-.petal-one { left: 10%; top: 47%; animation-delay: -8s; }
-.petal-two { right: 13%; top: 66%; width: 9px; height: 5px; animation-duration: 34s; animation-delay: -21s; }
-.petal-three { left: 27%; top: 82%; width: 8px; height: 5px; animation-duration: 31s; animation-delay: -13s; }
-.nebula {
-  position: absolute;
-  inset: -6%;
-  background:
-    radial-gradient(ellipse at 80% 80%, #6960b522, transparent 44%),
-    radial-gradient(ellipse at 15% 20%, #a88ae012, transparent 39%),
-    radial-gradient(ellipse at 80% 16%, #8fd9ed09, transparent 28%);
-  animation: nebula-drift 42s ease-in-out infinite alternate;
-}
-.stars {
-  position: absolute;
-  inset: 0;
-  /* 让输入框及状态文案周围保持安静，不让星点穿过文字。 */
-  mask-image: radial-gradient(ellipse 540px 280px at 50% 50%, transparent 75%, #000 125%);
-}
-.star {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  width: var(--size);
-  height: var(--size);
-  border-radius: 50%;
-  background: var(--star-color);
-  opacity: var(--opacity);
-  box-shadow: 0 0 5px var(--star-color);
-  animation: star-drift var(--duration) ease-in-out var(--delay) infinite alternate;
-}
-.star:nth-child(13n)::after {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  background: var(--star-color);
-  opacity: .55;
-  clip-path: polygon(50% 0, 59% 41%, 100% 50%, 59% 59%, 50% 100%, 41% 59%, 0 50%, 41% 41%);
-}
-.star-sea *, [data-theme="dark"] .flower-sea * { animation-play-state: paused; }
-[data-theme="dark"] .star-sea * { animation-play-state: running; }
-body[data-background-paused] .ambient * { animation-play-state: paused; }
-body:has(#token:not(:placeholder-shown)) .ambient, body:has(.is-awakening) .ambient { opacity: .55; }
-.ambient { transition: opacity 1.2s ease; }
 main { position: relative; min-height: 100svh; display: grid; place-items: center; padding: 120px 28px; }
 .login-scene {
   --scene-gap: clamp(24px, 7vw, 100px);
   container-type: inline-size;
+  /* 尺寸调节：下方两列分别控制刻印、输入框的宽度比例，fr 不是固定像素。
+     想让桌面刻印为 400px、输入框为 480px，可配 400fr / 480fr，
+     并把这里的总宽改为 980px（400 + 最大间距 100 + 480）；窄屏自动缩小。 */
   width: min(100%, 950px);
   display: grid;
-  grid-template-columns: minmax(0, 370fr) minmax(0, 480fr);
+  grid-template-columns: minmax(0, 400fr) minmax(0, 480fr);
   align-items: center;
   gap: var(--scene-gap);
 }
@@ -327,22 +260,6 @@ noscript { color: var(--muted); font-size: 12px; }
   from { opacity: 0; transform: translateY(3px); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes flower-sway {
-  from { transform: translateX(-3px) rotate(-.8deg); }
-  to { transform: translateX(4px) rotate(.9deg); }
-}
-@keyframes petal-drift {
-  from { transform: translate3d(-8px, 9px, 0) rotate(-18deg); }
-  to { transform: translate3d(14px, -12px, 0) rotate(24deg); }
-}
-@keyframes star-drift {
-  from { transform: translate3d(-3px, 3px, 0); }
-  to { transform: translate3d(5px, -5px, 0); }
-}
-@keyframes nebula-drift {
-  from { transform: translate3d(-.6%, .3%, 0); }
-  to { transform: translate3d(.6%, -.3%, 0); }
-}
 @keyframes signature-write {
   from { stroke-dashoffset: 1; }
   to { stroke-dashoffset: 0; }
@@ -365,17 +282,9 @@ noscript { color: var(--muted); font-size: 12px; }
   .input-line button { width: 28px; }
   .prompt { font-size: 13px; }
   input::placeholder { font-size: 12px; letter-spacing: 0; }
-  .flowers { width: 150%; left: -25%; height: 32svh; }
-  .flower-position-left { transform: translate(260px, -25px); }
-  .flower-position-right { transform: translate(-260px, -25px); }
-  .flower-bed-far, .petal-three, .star:nth-child(even) { display: none; }
-  .petal-one { top: 29%; left: 8%; }
-  .petal-two { top: 70%; }
-  .stars { mask-image: radial-gradient(ellipse 65vw 220px at 50% 50%, transparent 70%, #000 135%); }
   .signature { bottom: max(18px, env(safe-area-inset-bottom)); gap: 12px; }
   .signature-wordmark { flex-basis: 170px; width: 170px; height: 62px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 0ms !important; }
-  .ambient * { animation: none !important; }
 }

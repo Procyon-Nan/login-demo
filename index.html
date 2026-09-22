@@ -10,49 +10,6 @@
     <script src="./login.js" type="module"></script>
   </head>
   <body>
-    <div class="ambient" aria-hidden="true">
-      <div class="flower-sea">
-        <div class="flower-haze"></div>
-        <svg class="flowers" viewBox="0 0 1440 420" fill="none" preserveAspectRatio="xMidYMax slice">
-          <defs>
-            <linearGradient id="petal-color" x1="-20" y1="-45" x2="22" y2="10" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#FCF9FD" /><stop offset=".6" stop-color="#F1B8D8" /><stop offset="1" stop-color="#B8A2E8" />
-            </linearGradient>
-            <g id="flower">
-              <path d="M0 0C-12 42 15 85 2 148M3 87C-14 80-24 68-28 57M5 111C20 99 27 87 29 76" stroke="#B8A2E8" stroke-opacity=".5" stroke-width="1" />
-              <g fill="url(#petal-color)" stroke="#E58ABD" stroke-opacity=".3" stroke-width=".6">
-                <path id="petal" d="M0 3C-24-8-27-29-10-42C-4-38 0-35 0-31C0-35 5-38 11-42C28-27 21-7 0 3Z" />
-                <use href="#petal" transform="rotate(72)" /><use href="#petal" transform="rotate(144)" />
-                <use href="#petal" transform="rotate(216)" /><use href="#petal" transform="rotate(288)" />
-              </g>
-              <circle r="3" fill="#C7A376" fill-opacity=".55" />
-            </g>
-          </defs>
-          <g class="flower-bed flower-bed-far" opacity=".24">
-            <use href="#flower" transform="translate(55 300) scale(.65)" /><use href="#flower" transform="translate(205 278) scale(.52)" />
-            <use href="#flower" transform="translate(345 325) scale(.64)" /><use href="#flower" transform="translate(530 358) scale(.44)" />
-            <use href="#flower" transform="translate(885 355) scale(.47)" /><use href="#flower" transform="translate(1080 310) scale(.6)" />
-            <use href="#flower" transform="translate(1245 275) scale(.53)" /><use href="#flower" transform="translate(1390 300) scale(.68)" />
-          </g>
-          <g class="flower-position-left"><g class="flower-bed flower-bed-left" opacity=".48">
-            <use href="#flower" transform="translate(15 320) rotate(-14) scale(1.15)" />
-            <use href="#flower" transform="translate(143 275) rotate(10) scale(.92)" />
-            <use href="#flower" transform="translate(295 351) rotate(-8) scale(.85)" />
-            <use href="#flower" transform="translate(430 391) rotate(14) scale(.65)" />
-          </g></g>
-          <g class="flower-position-right"><g class="flower-bed flower-bed-right" opacity=".43">
-            <use href="#flower" transform="translate(1015 390) rotate(-12) scale(.7)" />
-            <use href="#flower" transform="translate(1160 340) rotate(8) scale(.82)" />
-            <use href="#flower" transform="translate(1300 270) rotate(-9) scale(.95)" />
-            <use href="#flower" transform="translate(1440 325) rotate(13) scale(1.2)" />
-          </g></g>
-        </svg>
-        <span class="drifting-petal petal-one"></span>
-        <span class="drifting-petal petal-two"></span>
-        <span class="drifting-petal petal-three"></span>
-      </div>
-      <div class="star-sea"><div class="nebula"></div><div class="stars"></div></div>
-    </div>
     <div class="debug-controls" role="group" aria-label="动画调试">
       <button id="debug-start" type="button" disabled>开始动画</button>
       <button id="debug-reset" type="button" disabled>重置</button>

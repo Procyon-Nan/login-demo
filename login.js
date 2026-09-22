@@ -17,6 +17,7 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const themeToggle = document.querySelector('.theme-toggle');
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 let themeManuallySelected = false;
+const IDLE_PERIOD = 5500;
 let idleAnimations = [];
 let flowId = 0;
 debugReset.disabled = false;
@@ -29,30 +30,16 @@ function syncSignetMotion() {
   }
 }
 
-function stopIdleMotion(settle = false) {
-  const { transform } = getComputedStyle(signetMotion);
-  const { opacity } = getComputedStyle(signetIdleGlow);
+function stopIdleMotion() {
   idleAnimations.forEach(animation => animation.cancel());
   idleAnimations = [];
-  if (settle && !reducedMotion.matches) {
-    // 从当前浮动位置回到静止，待机光晕独立退去，主体始终保持原亮度。
-    idleAnimations.push(
-      signetMotion.animate([
-        { transform }, { transform: 'translateY(0px)' },
-      ], { duration: 600, easing: 'ease-in-out' }),
-      signetIdleGlow.animate([
-        { opacity }, { opacity: 0 },
-      ], { duration: 600, easing: 'ease-in-out' }),
-    );
-    syncSignetMotion();
-  }
 }
 
 function startIdleMotion() {
   stopIdleMotion();
   if (reducedMotion.matches) return;
   // 同帧启动、共用周期与分段缓动：最高点最亮，最低点最暗。
-  const timing = { duration: 6000, iterations: Infinity, easing: 'linear' };
+  const timing = { duration: IDLE_PERIOD, iterations: Infinity, easing: 'linear' };
   idleAnimations = [
     signetMotion.animate([
       { transform: 'translateY(0px)', easing: 'ease-in-out' },
@@ -68,36 +55,33 @@ function startIdleMotion() {
   syncSignetMotion();
 }
 
+// 提交瞬间把下降半周期镜像到上升半周期；位置与亮度相同，只改变方向。
+function riseToIdlePeak() {
+  if (reducedMotion.matches) { stopIdleMotion(); return Promise.resolve(true); }
+  const phase = (idleAnimations[0]?.currentTime ?? 0) % IDLE_PERIOD;
+  const risingTime = Math.min(phase, IDLE_PERIOD - phase);
+  stopIdleMotion();
+  const timing = { duration: IDLE_PERIOD / 2, easing: 'ease-in-out', fill: 'forwards' };
+  idleAnimations = [
+    signetMotion.animate([{ transform: 'translateY(0px)' }, { transform: 'translateY(-7px)' }], timing),
+    signetIdleGlow.animate([{ opacity: 0 }, { opacity: 1 }], timing),
+  ];
+  idleAnimations.forEach(animation => { animation.currentTime = risingTime; });
+  syncSignetMotion();
+  // 达峰后保持当前位置和柔光，等归中完成再由渲染器逐笔接续。
+  return Promise.all(idleAnimations.map(animation => animation.finished.then(() => true, () => false)))
+    .then(results => results.every(Boolean));
+}
+
 reducedMotion.addEventListener('change', () => {
-  if (signet && !scene.matches('.is-awakening, .is-lit')) startIdleMotion();
-  else stopIdleMotion();
+  if (!signet) return;
+  if (scene.matches('.is-awakening, .is-lit')) {
+    // 登录途中切换为减少动态效果，直接完成有限的上升，不重新启动循环。
+    if (reducedMotion.matches) idleAnimations.forEach(animation => animation.finish());
+  } else startIdleMotion();
 });
 
-// 固定、稀疏的分布避免刷新和主题切换时随机跳变；手机端再减半。
-const stars = document.querySelector('.stars');
-const starFragment = document.createDocumentFragment();
-for (let index = 0; index < 36; index += 1) {
-  const star = document.createElement('span');
-  star.className = 'star';
-  star.style.cssText = `
-    --x: ${4 + ((index * 37) % 93)}%;
-    --y: ${5 + ((index * 23) % 89)}%;
-    --size: ${index % 5 === 0 ? 2 : 1}px;
-    --opacity: ${.18 + (index % 4) * .07};
-    --star-color: ${['#F8EEF7', '#B8A2E8', '#F1B8D8', '#B9E8F5'][index % 4]};
-    --duration: ${26 + (index % 5) * 4}s;
-    --delay: -${index * 1.7}s;
-  `;
-  starFragment.append(star);
-}
-stars.append(starFragment);
-
-function syncBackgroundMotion() {
-  document.body.toggleAttribute('data-background-paused', document.hidden);
-  syncSignetMotion();
-}
-document.addEventListener('visibilitychange', syncBackgroundMotion);
-syncBackgroundMotion();
+document.addEventListener('visibilitychange', syncSignetMotion);
 
 function setTheme(dark) {
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
@@ -177,8 +161,15 @@ form.addEventListener('submit', async (event) => {
 async function playSignet(preview) {
   if (debugStart.disabled) return;
   const run = ++flowId;
-  // 调试与登录共用收起、归中、点亮流程；预览完成后留在中央。
-  stopIdleMotion(true);
+  // 重播从未亮状态开始；正常登录直接承接当前轮廓及柔光。
+  const replay = scene.dataset.phase === 'lit';
+  if (replay) {
+    signet.reset();
+    startIdleMotion();
+  }
+  scene.classList.remove('is-lit');
+  const peakReady = riseToIdlePeak();
+  // 上升与输入框收起、刻印归中同时进行，二者完成后再点亮。
   input.value = '';
   input.blur();
   input.disabled = true;
@@ -187,11 +178,12 @@ async function playSignet(preview) {
   form.setAttribute('aria-busy', 'true');
   status.textContent = '';
   scene.classList.add('is-awakening');
-  if (scene.dataset.phase !== 'lit') {
+  if (!replay) {
     if (!await runPhase('closing', form, run, true)) return;
     if (!await runPhase('centering', signetElement, run)) return;
   }
-  scene.classList.remove('is-lit');
+  scene.dataset.phase = 'waiting-peak';
+  if (!await peakReady || run !== flowId) return;
   scene.dataset.phase = 'lighting';
   if (!await signet.play(reducedMotion) || run !== flowId) return;
   scene.classList.add('is-lit');

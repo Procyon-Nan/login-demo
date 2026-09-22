@@ -4,7 +4,9 @@ const RENDER_SIZE = 640;
 // 对应 CSS 的 17.5% 外扩，让原图自带的泛光完整落在画布内。
 const ART_PADDING = 112;
 const ART_SIZE = 640 + ART_PADDING * 2;
-const LIGHT_DURATION = 2100;
+// 点亮时长，单位毫秒：数值越小越快，例如 1500 = 1.5 秒。
+// 仅控制笔画充盈与原生泛光，不含输入框收起、刻印归中和向最亮状态上升的时间。
+const LIGHT_DURATION = 1800;
 const smoothstep = (start, end, value) => {
   const t = Math.max(0, Math.min(1, (value - start) / (end - start)));
   return t * t * (3 - 2 * t);
@@ -255,32 +257,37 @@ export async function createSignet(canvas, idleGlowCanvas) {
         data[offset + channel] = alpha ? (lit * fillAlpha + idleColor[channel] * lineAlpha) / alpha : 0;
       }
       data[offset + 3] = alpha * 255;
+      // 未充盈处继续保留峰值轮廓柔光，随笔画稳定逐点交给素材原生泛光。
+      idleGlowFrame.data[offset + 3] = pixel.line * (1 - settled) * 255;
     }
     context.putImageData(frame, 0, 0);
+    idleGlowContext.putImageData(idleGlowFrame, 0, 0);
   }
   function refreshTheme() {
     const style = getComputedStyle(document.documentElement);
     const color = name => style.getPropertyValue(name).trim().slice(1).match(/../g).map(value => parseInt(value, 16));
     idleColor = color('--signet-idle');
     flowColor = color('--signet-flow');
-    // 独立光晕只取同一轮廓，初始化与切换主题时更新；呼吸不改变主体线条。
+    // 主题只更新柔光颜色；覆盖率由 draw 与笔画充盈同步计算。
     for (let i = 0; i < contour.length; i++) {
       idleGlowFrame.data[i * 4] = idleColor[0];
       idleGlowFrame.data[i * 4 + 1] = idleColor[1];
       idleGlowFrame.data[i * 4 + 2] = idleColor[2];
-      idleGlowFrame.data[i * 4 + 3] = contour[i] * 255;
     }
-    idleGlowContext.putImageData(idleGlowFrame, 0, 0);
     draw(progress);
   }
-  function reset() {
+  function cancel() {
     cancelAnimationFrame(request);
     if (finish) finish(false);
     finish = null;
+  }
+  function reset() {
+    cancel();
     draw(0);
   }
   function play(reducedMotion) {
-    reset();
+    cancel();
+    const startProgress = progress;
     if (reducedMotion.matches) { draw(1); return Promise.resolve(true); }
     return new Promise(resolve => {
       finish = resolve;
@@ -291,7 +298,9 @@ export async function createSignet(canvas, idleGlowCanvas) {
         elapsed += Math.min(48, now - previous);
         previous = now;
         const time = Math.min(1, elapsed / LIGHT_DURATION);
-        draw(reducedMotion.matches ? 1 : time * time * (3 - 2 * time));
+        // 初段直接推进，末段减速至零，避免与逐像素充盈的缓起叠加成停顿。
+        const eased = time * (2 - time);
+        draw(reducedMotion.matches ? 1 : startProgress + (1 - startProgress) * eased);
         if (time < 1 && !reducedMotion.matches) request = requestAnimationFrame(tick);
         else { finish = null; resolve(true); }
       }
