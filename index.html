@@ -29,37 +29,35 @@
             <canvas class="signet-art" aria-hidden="true"></canvas>
           </div>
         </div>
-      <form class="terminal" aria-label="Token 登录">
+      <form class="terminal" aria-label="密钥登录">
         <span class="origin" aria-hidden="true"></span>
-        <svg class="frame frame-upper" viewBox="0 0 480 80" preserveAspectRatio="none" aria-hidden="true">
+        <svg class="frame frame-upper" viewBox="0 0 400 80" preserveAspectRatio="none" aria-hidden="true">
           <defs>
-            <linearGradient id="input-thread" x1="12" y1="10" x2="360" y2="10" gradientUnits="userSpaceOnUse">
-              <stop stop-color="var(--line)" /><stop offset=".4" stop-color="var(--primary)" /><stop offset="1" stop-color="var(--line)" stop-opacity="0" />
+            <linearGradient id="input-thread" x1="5" y1="8" x2="286" y2="8" gradientUnits="userSpaceOnUse">
+              <stop stop-color="var(--control)" /><stop offset="1" stop-color="var(--control)" stop-opacity="0" />
             </linearGradient>
-            <path id="input-petal" d="M12 10Q5 8 7 0Q15 2 12 10Q19 12 17 20Q9 18 12 10Z" />
-            <path id="input-arc" d="M12 10C44 0 72 3 110 5S252 10 360 10" pathLength="1" />
-            <path id="input-tip" d="M12 10Q2 22 5 35" pathLength="1" />
+            <path id="input-facet" d="M5 24L21 8L29 11L11 28Z" />
+            <path id="input-ridge" d="M5 42V24L21 8H286" pathLength="1" />
+            <path id="input-detail" d="M11 28L29 11H100" pathLength="1" />
           </defs>
-          <use class="frame-petal" href="#input-petal" />
-          <use class="frame-arc" href="#input-arc" />
-          <use class="frame-tip" href="#input-tip" />
+          <use class="frame-facet" href="#input-facet" />
+          <use class="frame-ridge" href="#input-ridge" />
+          <use class="frame-detail" href="#input-detail" />
         </svg>
-        <svg class="frame frame-lower" viewBox="0 0 480 80" preserveAspectRatio="none" aria-hidden="true">
-          <g transform="rotate(180 240 40)">
-            <use class="frame-petal" href="#input-petal" />
-            <use class="frame-arc" href="#input-arc" />
-            <use class="frame-tip" href="#input-tip" />
+        <svg class="frame frame-lower" viewBox="0 0 400 80" preserveAspectRatio="none" aria-hidden="true">
+          <g transform="rotate(180 200 40)">
+            <use class="frame-facet" href="#input-facet" />
+            <use class="frame-ridge" href="#input-ridge" />
+            <use class="frame-detail" href="#input-detail" />
           </g>
         </svg>
         <div class="input-line">
-          <span class="prompt" aria-hidden="true">&gt;_</span>
-          <label class="sr-only" for="token">Access token</label>
-          <input id="token" name="token" type="password" placeholder="access token" autocomplete="off" spellcheck="false" autocapitalize="off" required disabled />
-          <button type="submit" aria-label="登录" title="登录" disabled>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
-              <path d="M4 12h15m-6-6 6 6-6 6" />
-            </svg>
-          </button>
+          <label class="sr-only" for="token">登陆密钥</label>
+          <div class="token-field">
+            <input id="token" name="token" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" enterkeyhint="go" aria-required="true" disabled />
+            <span class="sr-only" aria-hidden="true"><span class="token-measure"></span></span>
+            <span class="token-caret" aria-hidden="true"></span>
+          </div>
         </div>
         <p class="terminal-status" role="status" aria-live="polite"></p>
       </form>

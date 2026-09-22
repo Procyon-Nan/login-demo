@@ -1,9 +1,9 @@
 import { createSignet } from './signet.js';
 import { createFireflies } from './fireflies.js';
+import { createTokenInput } from './token-input.js';
 
 const form = document.querySelector('.terminal');
 const input = document.querySelector('#token');
-const submit = form.querySelector('button');
 const status = form.querySelector('.terminal-status');
 const signetElement = document.querySelector('.signet');
 const scene = document.querySelector('.login-scene');
@@ -15,6 +15,7 @@ const debugStart = document.querySelector('#debug-start');
 const debugReset = document.querySelector('#debug-reset');
 let signet;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const tokenInput = createTokenInput(input, reducedMotion);
 const fireflies = createFireflies(document.querySelector('.fireflies'), reducedMotion, [signetElement, form, signature]);
 const themeToggle = document.querySelector('.theme-toggle');
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
@@ -105,13 +106,9 @@ systemTheme.addEventListener('change', (event) => {
 
 function enableInput() {
   input.disabled = false;
-  submit.disabled = false;
   debugStart.disabled = false;
   debugReset.disabled = false;
-  // 桌面端动画完成后聚焦；触屏设备由用户点击，避免自动弹出键盘。
-  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-    input.focus({ preventScroll: true });
-  }
+  tokenInput.start();
 }
 
 // 每段等待实际动画结束；流程编号阻止重置前的异步任务继续点亮或跳转。
@@ -126,8 +123,8 @@ async function runPhase(phase, element, run, subtree = false) {
 async function enterLogin() {
   const run = ++flowId;
   fireflies.reset();
+  tokenInput.reset();
   input.disabled = true;
-  submit.disabled = true;
   debugStart.disabled = true;
   startIdleMotion();
   if (!await runPhase('entering', signetElement, run)) return;
@@ -153,9 +150,9 @@ createSignet(signetCanvas, signetIdleGlow).then(renderer => {
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
-  if (submit.disabled) return;
+  if (input.disabled) return;
   if (!input.value.trim()) {
-    status.textContent = '请输入 token';
+    status.textContent = '请输入登陆密钥';
     input.focus();
     return;
   }
@@ -178,7 +175,7 @@ async function playSignet(preview) {
   input.value = '';
   input.blur();
   input.disabled = true;
-  submit.disabled = true;
+  tokenInput.reset();
   debugStart.disabled = true;
   form.setAttribute('aria-busy', 'true');
   status.textContent = '';
